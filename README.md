@@ -73,33 +73,68 @@ Or build from the command line:
 # APK: app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## Signed Release Build (Production)
+# Signed Release Build (Production)
 
-1. Keystore placement
+## 1. Place Your Keystore
 
-```bash
-Place your keystore here:
+Put your keystore file inside:
+
+\```bash
 app/example.jks
-```
+\```
 
-2. keystore.properties (DO NOT COMMIT)
+Replace `example.jks` with your actual keystore filename.
 
-```bash
-Create in project root:
+---
 
-STORE_FILE=example.jks  
-STORE_PASSWORD=YOUR_PASSWORD  
+## 2. Create `keystore.properties`
+
+Create this file in the project root:
+
+\```bash
+keystore.properties
+\```
+
+Project structure:
+
+\```bash
+project-root/
+├── app/
+│   └── example.jks
+├── keystore.properties
+└── build.gradle
+\```
+
+---
+
+## 3. Add Content Inside `keystore.properties`
+
+\```properties
+STORE_FILE=example.jks
+STORE_PASSWORD=YOUR_PASSWORD
 KEY_ALIAS=YOUR_ALIAS
-KEY_PASSWORD=YOUR_PASSWORD  
-```
+KEY_PASSWORD=YOUR_PASSWORD
+\```
 
-3. Git safety
+### What These Mean
 
-```bash
-Add to `.gitignore`:
-keystore.properties  
-app/*.jks  
-```
+- `STORE_FILE` → your keystore filename inside `app/`
+- `STORE_PASSWORD` → your keystore password
+- `KEY_ALIAS` → alias name used when the keystore was created
+- `KEY_PASSWORD` → password for the alias key
+
+Replace all placeholder values with your real values.
+
+---
+
+## 4. Git Safety
+
+Add these to `.gitignore`:
+
+\```gitignore
+keystore.properties
+app/*.jks
+\```
 
 ### Install via ADB
 
