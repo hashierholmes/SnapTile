@@ -1,4 +1,4 @@
-# Screenshot Tile
+# SnapTile
 
 A lightweight Android Quick Settings tile for capturing screenshots — with a built-in Snipping Tool and paint annotation editor. No ads, no tracking, no internet permission.
 
@@ -32,7 +32,7 @@ A lightweight Android Quick Settings tile for capturing screenshots — with a b
 ## Screenshots saved to
 `Pictures/Screenshots/` — visible in your Gallery / Photos app immediately.
 
-Format: `Screenshot_YYYYMMDD_HHmmss.png` (PNG, lossless)
+Format: `SnapTile_YYYYMMDD_HHmmss.png` (PNG, lossless)
 
 ---
 
@@ -60,8 +60,8 @@ Format: `Screenshot_YYYYMMDD_HHmmss.png` (PNG, lossless)
 ### Steps
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ScreenshotTile.git
-cd ScreenshotTile
+git clone https://github.com/hashierholmes/SnapTile.git
+cd SnapTile
 ```
 
 Open in Android Studio → **Build → Generate Signed APK** (or just hit **Run** for a debug build).
@@ -122,9 +122,9 @@ The service calls `stopSelf()` immediately after capturing one frame, so the scr
 
 ## Package name
 
-`my.example.application`
+`com.snaptile.app`
 
-Change it in `app/build.gradle` (`applicationId`) and `AndroidManifest.xml` (`package`) if you want to publish to the Play Store.
+Change it in `app/build.gradle.kts` (`applicationId`) and `AndroidManifest.xml` (`package`) if you want to publish to the Play Store.
 
 ---
 
