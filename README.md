@@ -75,26 +75,31 @@ Or build from the command line:
 
 ## Signed Release Build (Production)
 
-### 1. Keystore placement
+1. Keystore placement
+
+```bash
 Place your keystore here:
 app/example.jks
+```
 
----
+2. keystore.properties (DO NOT COMMIT)
 
-### 2. keystore.properties (DO NOT COMMIT)
+```bash
 Create in project root:
 
 STORE_FILE=example.jks  
 STORE_PASSWORD=YOUR_PASSWORD  
 KEY_ALIAS=YOUR_ALIAS
 KEY_PASSWORD=YOUR_PASSWORD  
+```
 
----
+3. Git safety
 
-### 3. Git safety
+```bash
 Add to `.gitignore`:
 keystore.properties  
 app/*.jks  
+```
 
 ### Install via ADB
 
