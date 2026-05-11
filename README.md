@@ -75,46 +75,46 @@ Or build from the command line:
 
 # Signed Release Build (Production)
 
-## 1. Place Your Keystore
+### 1. Place Your Keystore
 
 Put your keystore file inside:
 
-\```bash
+```bash
 app/example.jks
-\```
+```
 
 Replace `example.jks` with your actual keystore filename.
 
 ---
 
-## 2. Create `keystore.properties`
+### 2. Create `keystore.properties`
 
 Create this file in the project root:
 
-\```bash
+```bash
 keystore.properties
-\```
+```
 
 Project structure:
 
-\```bash
+```bash
 project-root/
 ├── app/
 │   └── example.jks
 ├── keystore.properties
 └── build.gradle
-\```
+```
 
 ---
 
-## 3. Add Content Inside `keystore.properties`
+### 3. Add Content Inside `keystore.properties`
 
-\```properties
+```properties
 STORE_FILE=example.jks
 STORE_PASSWORD=YOUR_PASSWORD
 KEY_ALIAS=YOUR_ALIAS
 KEY_PASSWORD=YOUR_PASSWORD
-\```
+```
 
 ### What These Mean
 
@@ -131,10 +131,10 @@ Replace all placeholder values with your real values.
 
 Add these to `.gitignore`:
 
-\```gitignore
+```gitignore
 keystore.properties
 app/*.jks
-\```
+```
 
 ### Install via ADB
 
