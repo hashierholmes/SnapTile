@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SnapTile</string>
+    <string name="tile_label">SnapTile</string>
+    <string name="take_screenshot">Take Screenshot</string>
+    <string name="full_screen">Full Screen</string>
+    <string name="region_select">Select Region</string>
+    <string name="cancel">Cancel</string>
+    <string name="screenshot_saved">Screenshot saved to gallery</string>
+    <string name="screenshot_failed">Screenshot failed</string>
+    <string name="permission_required">Permission required to capture screen</string>
+    <string name="channel_name">Screenshot Service</string>
+    <string name="channel_desc">Used to capture screenshots via Quick Settings tile</string>
+    <string name="notification_title">Screenshot Tile</string>
+    <string name="notification_text">Ready to capture</string>
+    <string name="drag_to_select">Drag to select region</string>
+    <string name="capture_region">Capture</string>
+</resources>

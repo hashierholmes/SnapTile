@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+     xmlns:android="http://schemas.android.com/apk/res/android"
+     android:layout_height="match_parent"
+     android:layout_width="match_parent"
+     android:scrollbars="none"
+     android:background="@color/bg"
+     android:fillViewport="true">
+
+    <LinearLayout
+         android:layout_height="wrap_content"
+         android:layout_width="match_parent"
+         android:paddingEnd="18dp"
+         android:orientation="vertical"
+         android:paddingBottom="30dp"
+         android:paddingStart="18dp"
+         android:paddingTop="24dp">
+
+        <LinearLayout
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             android:paddingEnd="4dp"
+             android:gravity="center_vertical"
+             android:orientation="horizontal"
+             android:paddingBottom="26dp"
+             android:paddingStart="4dp"
+             android:paddingTop="8dp">
+
+            <ImageView
+                 android:layout_height="55dp"
+                 android:layout_width="55dp"
+                 android:layout_marginEnd="14dp"
+                 android:src="@drawable/ic_screenshot"
+                 android:contentDescription="SnapTile logo"
+                 android:padding="4dp" />
+
+            <LinearLayout
+                 android:layout_height="wrap_content"
+                 android:layout_width="0dp"
+                 android:orientation="vertical"
+                 android:layout_weight="1">
+
+                <TextView
+                     android:layout_height="wrap_content"
+                     android:layout_width="wrap_content"
+                     android:textSize="27sp"
+                     android:textColor="@color/text_primary"
+                     android:text="SnapTile"
+                     android:textStyle="bold" />
+
+                <TextView
+                     android:layout_height="wrap_content"
+                     android:layout_width="wrap_content"
+                     android:textSize="12sp"
+                     android:textColor="@color/text_secondary"
+                     android:layout_marginTop="3dp"
+                     android:text="Quick Settings Screenshot Tool" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             android:layout_marginBottom="14dp"
+             android:background="@drawable/card_primary"
+             android:padding="20dp"
+             android:orientation="vertical">
+
+            <TextView
+                 android:layout_height="wrap_content"
+                 android:layout_width="wrap_content"
+                 android:textSize="23sp"
+                 android:textColor="@color/text_primary"
+                 android:text="Screenshot,\nwithout the hassle."
+                 android:textStyle="bold" />
+
+            <TextView
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:textSize="14sp"
+                 android:textColor="@color/text_secondary"
+                 android:layout_marginTop="11dp"
+                 android:lineSpacingExtra="3dp"
+                 android:text="Capture your screen instantly from Quick Settings with three flexible screenshot modes." />
+
+            <View
+                 android:layout_height="3dp"
+                 android:layout_width="46dp"
+                 android:background="@drawable/accent_line"
+                 android:layout_marginTop="17dp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             android:layout_marginBottom="12dp"
+             android:background="@drawable/card"
+             android:padding="19dp"
+             android:orientation="vertical">
+
+            <LinearLayout
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:gravity="center_vertical"
+                 android:orientation="horizontal">
+
+                <TextView
+                     android:layout_height="28dp"
+                     android:layout_width="38dp"
+                     android:background="@drawable/number_bg"
+                     android:gravity="center"
+                     android:textSize="11sp"
+                     android:textColor="@color/blue"
+                     android:text="01"
+                     android:textStyle="bold" />
+
+                <TextView
+                     android:layout_height="wrap_content"
+                     android:layout_width="0dp"
+                     android:textSize="16sp"
+                     android:textColor="@color/text_primary"
+                     android:layout_marginStart="12dp"
+                     android:layout_weight="1"
+                     android:text="Add SnapTile to Quick Settings"
+                     android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <TextView
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:textSize="14sp"
+                 android:textColor="@color/text_secondary"
+                 android:layout_marginTop="12dp"
+                 android:lineSpacingExtra="3dp"
+                 android:text="Swipe down twice to open the full Quick Settings panel. Tap the pencil or edit icon, find the &quot;SnapTile&quot; tile, then drag it into your active tiles." />
+
+        </LinearLayout>
+
+        <LinearLayout
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             android:layout_marginBottom="12dp"
+             android:background="@drawable/card"
+             android:padding="19dp"
+             android:orientation="vertical">
+
+            <LinearLayout
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:gravity="center_vertical"
+                 android:orientation="horizontal">
+
+                <TextView
+                     android:layout_height="28dp"
+                     android:layout_width="38dp"
+                     android:background="@drawable/number_bg"
+                     android:gravity="center"
+                     android:textSize="11sp"
+                     android:textColor="@color/blue"
+                     android:text="02"
+                     android:textStyle="bold" />
+
+                <TextView
+                     android:layout_height="wrap_content"
+                     android:layout_width="0dp"
+                     android:textSize="16sp"
+                     android:textColor="@color/text_primary"
+                     android:layout_marginStart="12dp"
+                     android:layout_weight="1"
+                     android:text="Tap the tile"
+                     android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <TextView
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:textSize="14sp"
+                 android:textColor="@color/text_secondary"
+                 android:layout_marginTop="12dp"
+                 android:lineSpacingExtra="3dp"
+                 android:text="Tap the SnapTile tile from Quick Settings. A small menu will appear with three screenshot options." />
+
+        </LinearLayout>
+
+        <LinearLayout
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             android:layout_marginBottom="12dp"
+             android:background="@drawable/card"
+             android:padding="19dp"
+             android:orientation="vertical">
+
+            <LinearLayout
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:gravity="center_vertical"
+                 android:orientation="horizontal">
+
+                <TextView
+                     android:layout_height="28dp"
+                     android:layout_width="38dp"
+                     android:background="@drawable/number_bg"
+                     android:gravity="center"
+                     android:textSize="11sp"
+                     android:textColor="@color/blue"
+                     android:text="03"
+                     android:textStyle="bold" />
+
+                <TextView
+                     android:layout_height="wrap_content"
+                     android:layout_width="0dp"
+                     android:textSize="16sp"
+                     android:textColor="@color/text_primary"
+                     android:layout_marginStart="12dp"
+                     android:layout_weight="1"
+                     android:text="Choose a mode"
+                     android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <TextView
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:textSize="14sp"
+                 android:textColor="@color/text_secondary"
+                 android:layout_marginTop="14dp"
+                 android:lineSpacingExtra="4dp"
+                 android:text="1. Full Screen\nCaptures the entire display instantly as a lossless PNG.\n2. Snip Region\nFreezes the screen. Drag a rectangle around the area you want, then annotate and save it.\n3. Full Screen + Paint\nCaptures the entire screen and immediately opens the paint editor." />
+
+        </LinearLayout>
+
+        <LinearLayout
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             android:layout_marginBottom="12dp"
+             android:visibility="gone"
+             android:background="@drawable/card"
+             android:padding="19dp"
+             android:orientation="vertical">
+
+            <TextView
+                 android:layout_height="wrap_content"
+                 android:layout_width="wrap_content"
+                 android:textSize="11sp"
+                 android:textColor="@color/blue"
+                 android:text="PAINT EDITOR"
+                 android:textStyle="bold" />
+
+            <TextView
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:textSize="14sp"
+                 android:textColor="@color/text_secondary"
+                 android:layout_marginTop="13dp"
+                 android:lineSpacingExtra="4dp"
+                 android:text="SAVE Writes the final PNG to your gallery.  UNDO / REDO Per-stroke editing history.  BRUSH Tap to cycle through Small, Medium and Large.  COLORS Choose from 12 available colors." />
+
+        </LinearLayout>
+
+        <LinearLayout
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             android:layout_marginBottom="12dp"
+             android:background="@drawable/card"
+             android:padding="19dp"
+             android:orientation="vertical">
+
+            <TextView
+                 android:layout_height="wrap_content"
+                 android:layout_width="wrap_content"
+                 android:textSize="11sp"
+                 android:textColor="@color/blue"
+                 android:text="WHERE ARE SCREENSHOTS SAVED?"
+                 android:textStyle="bold" />
+
+            <TextView
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:textSize="14sp"
+                 android:textColor="@color/text_secondary"
+                 android:layout_marginTop="13dp"
+                 android:lineSpacingExtra="4dp"
+                 android:text="Pictures/Screenshots  Screenshots appear in your Gallery automatically. Files are saved as PNG images using the format:  SnapTile_YYYYMMDD_HHmmss.png  Images are always saved losslessly." />
+
+        </LinearLayout>
+
+        <LinearLayout
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             android:background="@drawable/ready_card"
+             android:gravity="center_vertical"
+             android:padding="18dp"
+             android:orientation="horizontal"
+             android:layout_marginTop="2dp">
+
+            <TextView
+                 android:layout_height="42dp"
+                 android:layout_width="42dp"
+                 android:background="@drawable/check_bg"
+                 android:gravity="center"
+                 android:textSize="19sp"
+                 android:textColor="@color/blue"
+                 android:text="✓"
+                 android:textStyle="bold" />
+
+            <LinearLayout
+                 android:layout_height="wrap_content"
+                 android:layout_width="0dp"
+                 android:orientation="vertical"
+                 android:layout_marginStart="14dp"
+                 android:layout_weight="1">
+
+                <TextView
+                     android:layout_height="wrap_content"
+                     android:layout_width="match_parent"
+                     android:textSize="16sp"
+                     android:textColor="@color/text_primary"
+                     android:text="You&apos;re all set."
+                     android:textStyle="bold" />
+
+                <TextView
+                     android:layout_height="wrap_content"
+                     android:layout_width="match_parent"
+                     android:textSize="13sp"
+                     android:textColor="@color/text_secondary"
+                     android:layout_marginTop="4dp"
+                     android:text="Tap the tile and start capturing." />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+
+        <TextView
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             android:layout_marginBottom="4dp"
+             android:gravity="center"
+             android:clickable="true"
+             android:textSize="12sp"
+             android:textColor="#6B7280"
+             android:layout_marginTop="18dp"
+             android:focusable="true"
+             android:id="@+id/tvDeveloperCredit"
+             android:text="Made with 💙 by @hashierholmes" />
+
+    </LinearLayout>
+
+</ScrollView>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+
+    <color name="bg">#0D1117</color>
+
+    <color name="card">#171C23</color>
+    <color name="card_light">#202732</color>
+
+    <color name="blue">#4DA3FF</color>
+    <color name="blue_dark">#1F6FBF</color>
+    <color name="blue_soft">#182D43</color>
+
+    <color name="text_primary">#F1F4F8</color>
+    <color name="text_secondary">#AAB4C0</color>
+    <color name="text_muted">#66717E</color>
+
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+    <color name="overlay_dim">#99000000</color>
+
+    <color name="selection_border">#4DA3FF</color>
+    <color name="selection_fill">#334DA3FF</color>
+    <color name="handle_color">#4DA3FF</color>
+
+</resources>
