@@ -111,22 +111,15 @@ public class SnipActivity extends Activity {
         mSnipPaintBtn.setVisibility(View.GONE);
         bar.addView(mSnipPaintBtn);
 
+        // Fixed high margin: comfortably above the tallest system nav bar
+        // (3-button, gesture, tablets). No inset math — a previous attempt to
+        // read the inset returned 0 on some devices and made overlap worse.
         FrameLayout.LayoutParams barLp = new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
-        barLp.setMargins(0, 0, 0, dp(36));
+        barLp.setMargins(0, 0, 0, dp(110));
         root.addView(bar, barLp);
         mSnipActionBar = bar;
-
-        // Keep the bar clear of the system nav bar. Its height differs per
-        // device (3-button vs gesture), so read it from the window insets
-        // instead of guessing a fixed margin — this was also pushing the bar
-        // into the nav area and making it look off-center.
-        root.setOnApplyWindowInsetsListener((v, insets) -> {
-            barLp.bottomMargin = dp(20) + insets.getSystemWindowInsetBottom();
-            bar.setLayoutParams(barLp);
-            return insets;
-        });
 
         mSnipView.setOnSelectionChangedListener(has -> {
             mSnipSaveBtn.setVisibility(has ? View.VISIBLE : View.GONE);
