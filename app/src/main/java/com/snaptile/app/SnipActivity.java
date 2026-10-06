@@ -118,6 +118,16 @@ public class SnipActivity extends Activity {
         root.addView(bar, barLp);
         mSnipActionBar = bar;
 
+        // Keep the bar clear of the system nav bar. Its height differs per
+        // device (3-button vs gesture), so read it from the window insets
+        // instead of guessing a fixed margin — this was also pushing the bar
+        // into the nav area and making it look off-center.
+        root.setOnApplyWindowInsetsListener((v, insets) -> {
+            barLp.bottomMargin = dp(20) + insets.getSystemWindowInsetBottom();
+            bar.setLayoutParams(barLp);
+            return insets;
+        });
+
         mSnipView.setOnSelectionChangedListener(has -> {
             mSnipSaveBtn.setVisibility(has ? View.VISIBLE : View.GONE);
             mSnipPaintBtn.setVisibility(has ? View.VISIBLE : View.GONE);
