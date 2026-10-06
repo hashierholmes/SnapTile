@@ -112,7 +112,7 @@ public class SnipActivity extends Activity {
         bar.addView(mSnipPaintBtn);
 
         FrameLayout.LayoutParams barLp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
                 Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
         barLp.setMargins(0, 0, 0, dp(36));
         root.addView(bar, barLp);
