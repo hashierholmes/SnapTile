@@ -41,7 +41,9 @@ public class SnipActivity extends Activity {
 
     private boolean     mFullPaint;
     private SnipView    mSnipView;
+    private View        mSnipActionBar;
     private View        mSnipSaveBtn;
+    private View        mSnipPaintBtn;
     private View        mSnipCloseBtn;
     private PaintCanvas mPaintCanvas;
     private Bitmap      mEditBitmap;
@@ -87,29 +89,59 @@ public class SnipActivity extends Activity {
         mSnipView = new SnipView(this, CaptureActivity.pendingBitmap);
         root.addView(mSnipView, mp());
 
-        mSnipSaveBtn = makeIconBtn(R.drawable.ic_save, 0xCCFFFFFF, 0xFF1D4ED8, () -> confirmSnip(root));
-        mSnipSaveBtn.setVisibility(View.GONE);
+        // Bottom-centered thumb-reach bar: dismiss / save instantly / save + annotate.
+        // Save + annotate appear only once a region exists; dismiss is always there.
+        LinearLayout bar = new LinearLayout(this);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setGravity(Gravity.CENTER);
 
-        FrameLayout.LayoutParams saveLp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP | Gravity.START);
-        saveLp.setMargins(dp(14), dp(52), 0, 0);
-        root.addView(mSnipSaveBtn, saveLp);
-
-        // Dismiss button — same blue style as save, always visible so a stray
-        // snip can be thrown away without saving or picking a region first.
-        mSnipCloseBtn = makeIconBtn(R.drawable.ic_close, 0xCCFFFFFF, 0xFF1D4ED8, () -> {
+        mSnipCloseBtn = makeIconBtnLarge(R.drawable.ic_close, 0xFFFFFFFF, 0xFFDC2626, () -> {
             cleanup();
             finish();
         });
-        FrameLayout.LayoutParams closeLp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP | Gravity.END);
-        closeLp.setMargins(0, dp(52), dp(14), 0);
-        root.addView(mSnipCloseBtn, closeLp);
+        bar.addView(mSnipCloseBtn);
+        bar.addView(vSpace(14));
 
-        mSnipView.setOnSelectionChangedListener(has ->
-                mSnipSaveBtn.setVisibility(has ? View.VISIBLE : View.GONE));
+        mSnipSaveBtn = makeIconBtnLarge(R.drawable.ic_save, 0xFFFFFFFF, 0xFF1D4ED8, this::saveSnipInstantly);
+        mSnipSaveBtn.setVisibility(View.GONE);
+        bar.addView(mSnipSaveBtn);
+        bar.addView(vSpace(14));
+
+        mSnipPaintBtn = makeIconBtnLarge(R.drawable.ic_brush_md, 0xFFFFFFFF, 0xFF059669, () -> confirmSnip(root));
+        mSnipPaintBtn.setVisibility(View.GONE);
+        bar.addView(mSnipPaintBtn);
+
+        FrameLayout.LayoutParams barLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        barLp.setMargins(0, 0, 0, dp(36));
+        root.addView(bar, barLp);
+        mSnipActionBar = bar;
+
+        mSnipView.setOnSelectionChangedListener(has -> {
+            mSnipSaveBtn.setVisibility(has ? View.VISIBLE : View.GONE);
+            mSnipPaintBtn.setVisibility(has ? View.VISIBLE : View.GONE);
+        });
+    }
+
+    /**
+     * Saves the selected region straight to the gallery — no editor detour.
+     * The green brush button keeps the old save-and-annotate flow.
+     */
+    private void saveSnipInstantly() {
+        Rect sel = mSnipView != null ? mSnipView.getSelection() : null;
+        Bitmap src = CaptureActivity.pendingBitmap;
+        if (sel == null || src == null || src.isRecycled()) return;
+
+        int l = clamp(sel.left,   0, src.getWidth()  - 1);
+        int t = clamp(sel.top,    0, src.getHeight() - 1);
+        int r = clamp(sel.right,  l + 1, src.getWidth());
+        int b = clamp(sel.bottom, t + 1, src.getHeight());
+        Bitmap cropped = Bitmap.createBitmap(src, l, t, r - l, b - t);
+        ImageSaver.save(this, cropped);
+        cropped.recycle();
+        cleanup();
+        finish();
     }
 
     /**
@@ -133,8 +165,7 @@ public class SnipActivity extends Activity {
         CaptureActivity.pendingBitmap = null;
 
         mSnipView.setVisibility(View.GONE);
-        mSnipSaveBtn.setVisibility(View.GONE);
-        if (mSnipCloseBtn != null) mSnipCloseBtn.setVisibility(View.GONE);
+        if (mSnipActionBar != null) mSnipActionBar.setVisibility(View.GONE);
         buildPaintPhase(root);
     }
 
@@ -171,6 +202,13 @@ public class SnipActivity extends Activity {
         barBg.setColor(0xCC0D1117);   // 80% opaque near-black
         barBg.setCornerRadius(0);
         bar.setBackground(barBg);
+
+        // -- Dismiss (no save) --
+        bar.addView(makeIconBtn(R.drawable.ic_close, 0xFFFFFFFF, 0xFFDC2626, () -> {
+            cleanup();
+            finish();
+        }));
+        bar.addView(vSpace(6));
 
         // -- Save --
         bar.addView(makeIconBtn(R.drawable.ic_save, 0xFFFFFFFF, 0xCC1D4ED8, this::doSave));
@@ -294,6 +332,25 @@ public class SnipActivity extends Activity {
     /** View-based icon button that wraps an ImageView */
     private View makeIconBtn(int drawableRes, int tint, int bgColor, Runnable action) {
         return makeIconBtnImg(drawableRes, tint, bgColor, action);
+    }
+
+    /** Oversized (52dp) icon button for the bottom snip action bar — thumb reach. */
+    private ImageView makeIconBtnLarge(int drawableRes, int tint, int bgColor, Runnable action) {
+        ImageView iv = new ImageView(this);
+        iv.setImageResource(drawableRes);
+        iv.setColorFilter(tint);
+        iv.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        iv.setPadding(dp(12), dp(12), dp(12), dp(12));
+
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(bgColor);
+        bg.setCornerRadius(dp(16));
+        iv.setBackground(bg);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(52), dp(52));
+        iv.setLayoutParams(lp);
+        if (action != null) iv.setOnClickListener(v -> action.run());
+        return iv;
     }
 
     private View vDivider() {
