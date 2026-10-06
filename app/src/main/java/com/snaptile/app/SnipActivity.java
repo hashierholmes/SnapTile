@@ -337,23 +337,34 @@ public class SnipActivity extends Activity {
         return makeIconBtnImg(drawableRes, tint, bgColor, action);
     }
 
-    /** Oversized (52dp) icon button for the bottom snip action bar — thumb reach. */
-    private ImageView makeIconBtnLarge(int drawableRes, int tint, int bgColor, Runnable action) {
-        ImageView iv = new ImageView(this);
-        iv.setImageResource(drawableRes);
-        iv.setColorFilter(tint);
-        iv.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        iv.setPadding(dp(12), dp(12), dp(12), dp(12));
+    /** Oversized (52dp) icon button for the bottom snip action bar — thumb reach.
+     *  Structurally centered: fixed-size icon CENTERed in the box, no padding
+     *  math that can drift on any density. */
+    private View makeIconBtnLarge(int drawableRes, int tint, int bgColor, Runnable action) {
+        FrameLayout box = new FrameLayout(this);
 
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(bgColor);
         bg.setCornerRadius(dp(16));
-        iv.setBackground(bg);
+        box.setBackground(bg);
 
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(52), dp(52));
-        iv.setLayoutParams(lp);
-        if (action != null) iv.setOnClickListener(v -> action.run());
-        return iv;
+        box.setLayoutParams(lp);
+
+        ImageView iv = new ImageView(this);
+        iv.setImageResource(drawableRes);
+        iv.setColorFilter(tint);
+        iv.setScaleType(ImageView.ScaleType.CENTER);
+        iv.setAdjustViewBounds(false);
+        FrameLayout.LayoutParams ivLp = new FrameLayout.LayoutParams(
+                dp(24), dp(24), Gravity.CENTER);
+        iv.setLayoutParams(ivLp);
+        box.addView(iv);
+
+        box.setClickable(true);
+        box.setFocusable(true);
+        if (action != null) box.setOnClickListener(v -> action.run());
+        return box;
     }
 
     private View vDivider() {
