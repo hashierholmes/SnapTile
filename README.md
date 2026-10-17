@@ -257,6 +257,39 @@ accessibility service) — the same card then shows **Open accessibility setting
 `disableSelf()` needs Android 7.0+; on older releases the button sends you to Settings
 instead.
 
+### What we know so far (2026-10-17)
+
+The warning is **not** the obvious capability check, and the first two theories were
+disproved by looking at what the *unflagged* apps on the same device actually declare:
+
+| | SnapTile (flagged) | Key Mapper (on, not flagged) | Bitwarden (on, not flagged) |
+|---|---|---|---|
+| `canRetrieveWindowContent` | false | **true** | **true** |
+| `canPerformGestures` | false | **true** | – |
+| `canRequestFilterKeyEvents` | false | **true** | – |
+| `accessibilityEventTypes` | typeWindowsChanged | *(none declared)* | typeWindowStateChanged |
+| `isAccessibilityTool` | absent | absent | **false** |
+| `canTakeScreenshot` | **true** | absent | absent |
+
+Key Mapper declares window content, gesture injection *and* key-event filtering — the
+textbook malicious combination — and is left alone. Bitwarden even declares
+`isAccessibilityTool="false"` and is left alone. Two explanations survive:
+
+1. **`canTakeScreenshot`** — the one capability SnapTile declared that none of the
+   unflagged services do. Screen capture is exactly what OTP-stealing trojans want
+   (MITRE T1513), so a risk SDK may key on it.
+2. **Install source** — risk-SDK pipelines (e.g. Talsec's) give apps from a trusted store a
+   badge that *skips* the deep scan, and inspect sideloaded apps only. Every unflagged
+   service on the test device came from Play; both flagged ones (SnapTile, SnapTile Debug)
+   were sideloaded.
+
+`1.1.9-probe` removes variable 1 only — `canTakeScreenshot="false"` — with the service
+detecting the missing capability at request time and routing to the MediaProjection path,
+so all three modes still work (one consent dialog per capture). **Diagnostics: what
+scanners see** on the app's first card dumps the install source, capabilities, event types
+and enabled state of every accessibility service on the device — the same data the SDK
+reads.
+
 ---
 
 ## Build

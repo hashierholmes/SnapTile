@@ -2,7 +2,22 @@
 <!-- Screenshot-only service. Deliberately minimal so risk/banking scanners see
      no window-content read, no gesture injection, no text/keylogging events.
      typeWindowsChanged is the smallest event set that keeps takeScreenshot()
-     reliable across OEMs; onAccessibilityEvent() ignores everything anyway. -->
+     reliable across OEMs; onAccessibilityEvent() ignores everything anyway.
+
+     1.1.9-probe: canTakeScreenshot is switched OFF on purpose.
+
+     Everything else here is already minimal, yet bank/UPI apps still warn about
+     SnapTile while leaving *other* accessibility apps alone - including ones
+     that declare far more (Key Mapper declares window content, gesture
+     injection, key-event filtering and fingerprint gestures, and is not
+     flagged). The one capability SnapTile declared that none of those apps
+     declare is canTakeScreenshot, so this build removes exactly that one
+     variable to find out whether it is the trigger.
+
+     Consequence: takeScreenshot() can no longer succeed. The service detects
+     the missing capability at request time and routes to the MediaProjection
+     path, so all three modes still work - at the cost of one consent dialog
+     per capture. See ScreenshotAccessibilityService.hasScreenshotCapability(). -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeWindowsChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
@@ -11,6 +26,6 @@
     android:canRequestTouchExplorationMode="false"
     android:canRequestFilterKeyEvents="false"
     android:canPerformGestures="false"
-    android:canTakeScreenshot="true"
+    android:canTakeScreenshot="false"
     android:description="@string/accessibility_desc"
     android:summary="@string/accessibility_desc" />

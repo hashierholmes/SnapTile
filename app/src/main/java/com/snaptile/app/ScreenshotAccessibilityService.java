@@ -21,6 +21,9 @@ import androidx.annotation.RequiresApi;
  *
  *  - API 30+ : takeScreenshot(displayId, executor, callback) returns a Bitmap
  *              directly to the app. All 3 SnapTile modes keep working.
+ *              This needs CAPABILITY_CAN_TAKE_SCREENSHOT, which the XML grants;
+ *              1.1.9-probe withholds it on purpose (see the XML comment) and the
+ *              service then routes to the MediaProjection path instead.
  *  - API 28-29 : performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT) triggers
  *              the system screenshot UI. System owns save/share.
  *  - API <28 : no accessibility screenshot API — falls back to CaptureActivity
@@ -127,7 +130,15 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
 
     private void handleRequest() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            takeScreenshotCompat();
+            if (hasScreenshotCapability()) {
+                takeScreenshotCompat();
+            } else {
+                // 1.1.9-probe: the config deliberately stops declaring
+                // canTakeScreenshot, so takeScreenshot() can never succeed.
+                // Route to the MediaProjection path instead — all three modes
+                // keep working, each capture needs one consent dialog.
+                startLegacyCapture();
+            }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             boolean ok = performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT);
             if (!ok) {
@@ -139,6 +150,23 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
         } else {
             startLegacyCapture();
         }
+    }
+
+    /**
+     * True when the platform actually granted CAPABILITY_CAN_TAKE_SCREENSHOT.
+     *
+     * The capability comes from res/xml/accessibility_service_config.xml and has
+     * no runtime setter, so this reads the live AccessibilityServiceInfo rather
+     * than assuming: if the config stops declaring it, takeScreenshot() cannot
+     * succeed and the caller must use another route. Checking first avoids
+     * relying on the framework's behaviour when the capability is absent.
+     */
+    private boolean hasScreenshotCapability() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return false;
+        android.accessibilityservice.AccessibilityServiceInfo info = getServiceInfo();
+        return info != null
+                && (info.getCapabilities()
+                & android.accessibilityservice.AccessibilityServiceInfo.CAPABILITY_CAN_TAKE_SCREENSHOT) != 0;
     }
 
     @RequiresApi(30)
@@ -176,7 +204,9 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
                         }
                     });
         } catch (Exception e) {
-            toast("Capture failed: " + e.getMessage());
+            // Missing capability / OEM weirdness: never leave the user with a
+            // dead tile — the MediaProjection path also handles all 3 modes.
+            startLegacyCapture();
         }
     }
 

@@ -99,6 +99,12 @@ public class MainActivity extends Activity {
             banking.setOnClickListener(v -> onBankingOffClicked());
         }
 
+        Button diag = findViewById(R.id.btnDiagnostics);
+        if (diag != null) {
+            diag.setOnClickListener(v -> startActivity(
+                    new Intent(MainActivity.this, DiagnosticsActivity.class)));
+        }
+
         refreshAccessCard();
     }
 
