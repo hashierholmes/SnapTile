@@ -4,7 +4,9 @@ import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
 import android.hardware.display.DisplayManager;
@@ -66,6 +68,19 @@ public class CaptureActivity extends Activity {
 
         mMode = getIntent().getStringExtra(ScreenshotChooserActivity.EXTRA_MODE);
         if (mMode == null) mMode = ScreenshotChooserActivity.MODE_FULL;
+
+        // This activity only exists to drive MediaProjection. In a build that does
+        // not declare ProjectionService / the mediaProjection foreground-service
+        // type (1.1.14 removes both), asking for consent would end in a service
+        // that can never start, so refuse up front instead of hanging on it.
+        try {
+            getPackageManager().getServiceInfo(
+                    new ComponentName(this, ProjectionService.class), 0);
+        } catch (PackageManager.NameNotFoundException e) {
+            toast("No capture path in this build — turn SnapTile's accessibility service on");
+            finish();
+            return;
+        }
 
         // Capture at the physical display size rather than the activity window size.
         // The chooser/editor may not occupy the whole screen, but the screenshot must.

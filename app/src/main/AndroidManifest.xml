@@ -3,20 +3,50 @@
     package="com.snaptile.app">
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
+
+    <!-- FOREGROUND_SERVICE_MEDIA_PROJECTION and the mediaProjection
+         foregroundServiceType are deliberately absent in 1.1.14.
+
+         They are the last app-level declaration that says "this app can capture
+         the screen itself", and Super Money continues to flag SnapTile after
+         1.1.13 reduced the accessibility service to declaring nothing at all
+         (capabilities 0x0, event types 0x0) while leaving MediaProjection in
+         place. The rule cannot be reading the AccessibilityServiceInfo: every
+         field of SnapTile's live info is now a subset of an unflagged service's
+         (Twilight: CAN_TAKE_SCREENSHOT + events 0x0, enabled and not flagged;
+         Key Mapper: sideloaded and enabled with gestures, key filtering and
+         window content, not flagged).
+
+         So this build drops the screen-capture declaration too, which leaves
+         capture to performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT) - a
+         global action needs no capability and no permission. If the warning
+         clears, the trigger is the capture declaration; if it survives, the
+         cause is app identity (name, installer, first-install/update dates) and
+         no configuration can fix it.
+
+         Revert is one commit: this note, plus ProjectionService's declaration
+         below, plus that one permission line. -->
 
     <!-- Diagnostics enumerates accessibility services to compare install sources.
          Without this, package visibility (targetSdk 34) restricts that list to
          system packages plus SnapTile itself, which is exactly the comparison we
          need to be able to make. Matches any app that declares an accessibility
-         service; it grants no access to anything else they do. -->
+         service; it grants no access to anything else they do.
+
+         The explicit <package> entries below cover services that are enabled in
+         the secure setting but did not appear in that list - naming them is the
+         only way to read their install source, capabilities and dates, and those
+         are the controls this comparison depends on. -->
     <queries>
         <intent>
             <action android:name="android.accessibilityservice.AccessibilityService" />
         </intent>
+        <package android:name="io.github.visnkmr.powermenu" />
+        <package android:name="com.olalab.lockscreen" />
+        <package android:name="at.saltyy.switchly" />
     </queries>
 
     <application
@@ -76,15 +106,18 @@
             android:exported="false"
             android:label="@string/diagnostics_title" />
 
-        <service
-            android:name=".ProjectionService"
-            android:exported="false"
-            android:foregroundServiceType="mediaProjection" />
+        <!-- ProjectionService is NOT declared in 1.1.14: its declaration
+             (android:foregroundServiceType="mediaProjection") plus the
+             FOREGROUND_SERVICE_MEDIA_PROJECTION permission are the app-level
+             "this app can capture the screen" signal this build tests by
+             removing. The class is left in the tree so the revert is a manifest
+             edit; ScreenshotAccessibilityService checks the declaration before
+             routing anything to it. -->
 
         <!-- Clean screenshot path (PowerMenu-style). Tile/chooser route through
              this service: API 30+ takeScreenshot() returns a Bitmap in-app,
-             API 28-29 performGlobalAction(TAKE_SCREENSHOT) uses system UI.
-             Pre-28 falls back to CaptureActivity + ProjectionService above. -->
+             API 28+ performGlobalAction(TAKE_SCREENSHOT) uses system UI when the
+             capability is not declared. Pre-28 needs MediaProjection. -->
         <service
             android:name=".ScreenshotAccessibilityService"
             android:exported="true"

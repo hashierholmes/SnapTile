@@ -1,7 +1,9 @@
 package com.snaptile.app;
 
 import android.accessibilityservice.AccessibilityService;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Handler;
@@ -149,22 +151,34 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
                 takeScreenshotCompat();
             } else {
                 // The config does not declare canTakeScreenshot, so
-                // takeScreenshot() can never succeed. Route to the
-                // MediaProjection path instead — all three modes keep working,
-                // each capture needs one consent dialog.
-                startLegacyCapture();
+                // takeScreenshot() can never succeed. A global action does not
+                // need the capability, so let the system take the shot and own
+                // the result — same route as API 28-29. Region/Paint modes
+                // cannot receive that bitmap; they fall through to
+                // startLegacyCapture() where the MediaProjection path exists.
+                systemScreenshot();
             }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            boolean ok = performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT);
-            if (!ok) {
-                toast("Screenshot failed");
-            }
-            // NOTE: on API 28-29 the system owns save/share UI.
-            // Region / Paint modes cannot receive a bitmap here —
-            // they fall back to MediaProjection (see pick() fallback).
+            systemScreenshot();
         } else {
             startLegacyCapture();
         }
+    }
+
+    /**
+     * System-owned screenshot: performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT).
+     *
+     * Needs no capability and no permission, so it also works in builds that
+     * withhold CAPABILITY_CAN_TAKE_SCREENSHOT. The system saves the image and
+     * shows its own UI; SnapTile only gets a bitmap through takeScreenshot(),
+     * which is why region/paint modes need either the capability or the
+     * MediaProjection path.
+     */
+    private void systemScreenshot() {
+        boolean ok = performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT);
+        toast(ok
+                ? "System screenshot saved (SnapTile has no screenshot capability in this build)"
+                : "Screenshot failed");
     }
 
     /**
@@ -243,10 +257,37 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
     }
 
     private void startLegacyCapture() {
+        if (!projectionPathDeclared()) {
+            // 1.1.14 removes the mediaProjection declaration on purpose, so the
+            // MediaProjection route is dead here and must not be entered: it
+            // would start an undeclared service and hang waiting for it.
+            toast("No capture path in this build — turn SnapTile's accessibility service on");
+            return;
+        }
         Intent i = new Intent(this, CaptureActivity.class);
         i.putExtra(ScreenshotChooserActivity.EXTRA_MODE, sPendingMode);
         i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(i);
+    }
+
+    /**
+     * True when this build declares ProjectionService (and therefore the
+     * mediaProjection foreground-service type and permission that go with it).
+     *
+     * Asking the PackageManager rather than asserting a build-time constant keeps
+     * one source of truth: the manifest. A build without the declaration — like
+     * 1.1.14, which removes it to test whether the capture declaration is what
+     * bank/UPI scanners key on — reports false and capture is refused instead of
+     * failing halfway through a consent flow.
+     */
+    private boolean projectionPathDeclared() {
+        try {
+            getPackageManager().getServiceInfo(
+                    new ComponentName(this, ProjectionService.class), 0);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
     }
 
     private void toast(String msg) {

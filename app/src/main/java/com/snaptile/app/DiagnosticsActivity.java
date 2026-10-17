@@ -83,17 +83,22 @@ public class DiagnosticsActivity extends Activity {
         sb.append("Verified against super.money, 2026-10-17:\n");
         sb.append(" - only ENABLED services matter: disabling\n");
         sb.append("   SnapTile's service makes the warning go away\n");
-        sb.append(" - install source does not decide it on its own:\n");
+        sb.append(" - install source alone does not decide it:\n");
         sb.append("   Key Mapper and Shizuku-Next are sideloaded,\n");
         sb.append("   ENABLED, and not flagged (Key Mapper declares\n");
-        sb.append("   window content, key filtering and gestures)\n\n");
-        sb.append("Candidate left: CAN_TAKE_SCREENSHOT. It is the\n");
-        sb.append("only capability the flagged service has that no\n");
-        sb.append("ENABLED, unflagged service here has. 1.1.13\n");
-        sb.append("withholds it to test that directly; the earlier\n");
-        sb.append("1.1.9 probe could not settle it because that\n");
-        sb.append("build still declared accessibilityEventTypes.\n");
-        sb.append("Compare caps/events on the ENABLED entries.\n\n");
+        sb.append("   window content, key filtering and gestures)\n");
+        sb.append(" - the declared accessibility info does not\n");
+        sb.append("   decide it: 1.1.13 declared no capabilities and\n");
+        sb.append("   no event types and was flagged anyway, while\n");
+        sb.append("   Twilight is ENABLED, declares\n");
+        sb.append("   CAN_TAKE_SCREENSHOT, and is not flagged.\n");
+        sb.append("   Every field of SnapTile's live info is a\n");
+        sb.append("   subset of some unflagged service's.\n\n");
+        sb.append("So the trigger is app-level. 1.1.14 removes the\n");
+        sb.append("screen-capture declaration (FOREGROUND_SERVICE_\n");
+        sb.append("MEDIA_PROJECTION + foregroundServiceType) and\n");
+        sb.append("nothing else, to test that. Compare the\n");
+        sb.append("\"declares\" and \"dates\" lines per entry.\n\n");
         sb.append("this app  : ").append(getPackageName()).append('\n');
         sb.append("version   : ").append(versionName()).append('\n');
         sb.append("installer : ").append(installerOf(pm, getPackageName())).append('\n');
@@ -137,6 +142,10 @@ public class DiagnosticsActivity extends Activity {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 sb.append(" a11yTool ").append(info.isAccessibilityTool()).append('\n');
             }
+            String text = serviceText(pm, info);
+            if (!text.isEmpty()) {
+                sb.append(" text     ").append(text).append('\n');
+            }
         }
 
         // Ground truth that package visibility cannot hide: the secure setting
@@ -157,16 +166,23 @@ public class DiagnosticsActivity extends Activity {
                 String pkg = slash > 0 ? component.substring(0, slash) : component;
                 sb.append(" ").append(component).append('\n');
                 sb.append("   installer ").append(installerOf(pm, pkg)).append('\n');
+                sb.append("   declares ").append(appFacts(pm, pkg)).append('\n');
             }
         }
 
         sb.append("\n----------------------------------------\n");
         sb.append("CAN_TAKE_SCREENSHOT = this service may capture\n");
         sb.append("the screen itself (not just trigger the system\n");
-        sb.append("screenshot), which is what OTP-stealing trojans\n");
-        sb.append("want. super.money's warning says the app can\n");
-        sb.append("\"control your screen\". 1.1.13 withholds it so\n");
-        sb.append("the next reading says whether that is the rule.\n");
+        sb.append("screenshot). It is NOT what the warning keys on:\n");
+        sb.append("1.1.13 declared no capabilities at all and was\n");
+        sb.append("still flagged, while Twilight is ENABLED with\n");
+        sb.append("exactly this capability and is not flagged.\n\n");
+        sb.append("mediaProjection=yes = the app declares that it\n");
+        sb.append("may capture the screen through MediaProjection.\n");
+        sb.append("It is the last app-level declaration 1.1.14\n");
+        sb.append("removes, so this reading says whether these\n");
+        sb.append("scanners treat \"can capture the screen\" as the\n");
+        sb.append("risk, or something no config can change.\n");
         return sb.toString();
     }
 
@@ -178,6 +194,56 @@ public class DiagnosticsActivity extends Activity {
         } catch (PackageManager.NameNotFoundException e) {
             return "?";
         }
+    }
+
+    /** The service's own description text — the string Settings shows the user. */
+    private static String serviceText(PackageManager pm, AccessibilityServiceInfo info) {
+        CharSequence d = null;
+        try {
+            d = info.loadDescription(pm);
+        } catch (Throwable ignored) {
+            // Fall through to the raw fields below.
+        }
+        if (d == null || d.length() == 0) d = info.getDescription();
+        if (d == null) return "";
+        String s = d.toString().replace('\n', ' ').trim();
+        return s.length() > 110 ? s.substring(0, 110) + "…" : s;
+    }
+
+    /**
+     * What an app declares that a screen-capture rule could key on, plus when it
+     * was last written — the two app-level things the accessibility info cannot
+     * explain. Falls back to a note when package visibility still hides it.
+     */
+    private String appFacts(PackageManager pm, String pkg) {
+        try {
+            PackageInfo pi = pm.getPackageInfo(pkg, PackageManager.GET_PERMISSIONS);
+            String[] req = pi.requestedPermissions;
+            String facts = "mediaProjection="
+                    + (has(req, "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION") ? "yes" : "no")
+                    + " captureVideo="
+                    + (has(req, "android.permission.CAPTURE_VIDEO_OUTPUT")
+                        || has(req, "android.permission.CAPTURE_SECURE_VIDEO_OUTPUT") ? "yes" : "no")
+                    + " overlay="
+                    + (has(req, "android.permission.SYSTEM_ALERT_WINDOW") ? "yes" : "no")
+                    + "\n   dates    installed " + date(pi.firstInstallTime)
+                    + " updated " + date(pi.lastUpdateTime);
+            return facts;
+        } catch (PackageManager.NameNotFoundException e) {
+            return "(package not visible, or not installed)";
+        }
+    }
+
+    private static boolean has(String[] values, String needle) {
+        if (values == null) return false;
+        for (String v : values) {
+            if (needle.equals(v)) return true;
+        }
+        return false;
+    }
+
+    private static String date(long millis) {
+        return android.text.format.DateFormat.format("yyyy-MM-dd", millis).toString();
     }
 
     /** Package + class of a service, used to match installed against enabled. */

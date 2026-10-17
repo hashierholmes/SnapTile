@@ -259,51 +259,54 @@ instead.
 
 ### What we know so far (2026-10-17)
 
-The warning is **not** about what SnapTile declares, and that is now tested rather than
-inferred. What the *unflagged* apps on the same device declare:
+The warning is **not** about the accessibility declaration, and that is now tested from both
+sides rather than inferred. SnapTile `1.1.13` shipped declaring *nothing at all* — capabilities
+`0x0`, event types `0x0` — and Super Money flagged it anyway, while **Twilight**, enabled
+throughout, declares `CAN_TAKE_SCREENSHOT` and is not flagged. Every field of SnapTile's live
+`AccessibilityServiceInfo` is a subset of some unflagged service's:
 
-| | SnapTile (flagged) | Key Mapper (on, not flagged) | Bitwarden (on, not flagged) | Shizuku-Next (on, not flagged) |
-|---|---|---|---|---|
-| install source | sideloaded | **sideloaded** | Play | **sideloaded** |
-| `canRetrieveWindowContent` | false | **true** | **true** | **true** |
-| `canPerformGestures` | false | **true** | – | – |
-| `canRequestFilterKeyEvents` | false | **true** | – | – |
-| `accessibilityEventTypes` | 0x00000000 (1.1.12+) | 0 | 0x20 | 0x820 |
-| `canTakeScreenshot` | **0x80** | absent | absent | absent |
+| | SnapTile 1.1.13 (**flagged**) | Twilight (on, **not** flagged) | Key Mapper (on, not flagged) | Bitwarden (on, not flagged) | Shizuku-Next (on, not flagged) |
+|---|---|---|---|---|---|
+| install source | sideloaded | Play | **sideloaded** | Play | **sideloaded** |
+| capabilities | **0x0 (none)** | 0x80 screenshot | 0x69 window+keys+gestures | 0x1 | 0x1 |
+| `accessibilityEventTypes` | **0** | 0 | 0 | 0x20 | 0x820 |
+| `feedbackType` / `flags` | 0x10 / 0x1 | 0x10 / 0x0 | 0x0 / 0x0 | 0x10 / 0x50 | 0x10 / 0x41 |
 
-Key Mapper declares window content, gesture injection *and* key-event filtering — the
-textbook malicious combination — **and is sideloaded**, and is left alone. Bitwarden even
-declares `isAccessibilityTool="false"` and is left alone. Read together, the enabled
-services say the rule is neither "third party", nor "sideloaded", nor "declares dangerous
-capabilities".
+Key Mapper declares window content, gesture injection *and* key-event filtering — the textbook
+malicious combination — **and is sideloaded**, and is left alone. That combination of facts is
+only possible if the decision does not come from the accessibility info at all.
 
-Ruled out by experiment or by AOSP source, not by guesswork:
+Ruled out by experiment, not by guesswork:
 
 | Theory | Result |
 |---|---|
 | "any enabled third-party service is flagged" | **No** — Bitwarden/Key Mapper are enabled and unflagged |
 | `typeAllMask`/keylogging event-set heuristic | **No** — Key Mapper declares no event types and is unflagged |
 | `isAccessibilityTool="false"` is treated as suspicious | **No** — Bitwarden declares exactly that and is unflagged |
-| **provenance** — a trusted store buys a skip | **No** — Key Mapper and Shizuku-Next are sideloaded, enabled and unflagged; the Talsec-style pipeline description does not survive contact with the device |
-| `accessibilityEventTypes` | **tested in `1.1.12`** — the attribute is gone from the XML *and* from the runtime pin (pin the XML alone and `setServiceInfo` re-imposes the old value). It costs nothing: the service ignores every event it receives |
-| `canTakeScreenshot="true"` is the trigger | **open** — `1.1.9-probe` shipped with it `false` and was flagged, but that build still declared `typeWindowsChanged`, so the result could not be attributed to either one. It is the only capability the flagged service has that **no enabled, unflagged service on the device has** (every other declarer — TalkBack, Select to Speak, System UI, Twilight — is switched off), and it matches the warning copy: "can control your screen" |
+| **provenance** — a trusted store buys a skip | **No** — Key Mapper and Shizuku-Next are sideloaded, enabled and unflagged |
+| `accessibilityEventTypes` | **No** — `1.1.12` removed it from the XML *and* the runtime pin; still flagged |
+| `canTakeScreenshot` | **No, both ways** — `1.1.13` declared no capability and was flagged; Twilight is enabled *with* it and is not |
+| "declares nothing = suspicious" | **No** — same build, same result: `1.1.13` declared nothing and was flagged |
 | the service only matters when enabled | **Yes** — disabling it made the warning disappear |
 
-So `1.1.12` (event type removed, capability kept) and `1.1.13` (both removed) complete a 2×2
-that attributes the result instead of guessing at it. If `1.1.13` is still flagged, no
-declared value is the trigger and the cause is app-level — at which point the
-`a11yprobe/` module's "declares nothing at all" variant is the control that isolates it.
+With the accessibility side exhausted, the trigger is app-level. The one thing SnapTile declares
+at app level that no enabled, unflagged app on the device declares is **screen capture**:
+`FOREGROUND_SERVICE_MEDIA_PROJECTION` plus `android:foregroundServiceType="mediaProjection"`.
+`1.1.14` removes exactly that, and nothing else, to test it. Capture moves to
+`performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT)`, which needs no capability and no
+permission.
 
-If the capability is what does it, the fix is to give it up: capture then either takes the
-system route — `performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT)` needs no capability and
-still avoids a consent dialog, at the cost of reading the result back from MediaStore — or
-falls back to MediaProjection with one dialog per capture.
+- **Warning clears** → scanners key on "this app can capture the screen itself". SnapTile then
+  ships without MediaProjection, and one tap keeps working via the system screenshot.
+- **Warning survives** → nothing configurable is left; the cause is app identity (name,
+  installer, install/update dates) and no build can change it. The device already shows the
+  precedent: `Key Mapper` and `Shizuku-Next` are the same kind of app done by other people.
 
-Operationally, the answer either way is the same: **the warning keys on enabled services**,
-so Banking mode clears it in one tap — and capture still works with the service off, via
-the tile's one-time MediaProjection consent. **Diagnostics: what scanners see** on the
-app's first card dumps the install source, capabilities, event types and enabled state of
-every accessibility service on the device — the same data the SDK reads.
+Operationally the answer stays: **the warning keys on enabled services**, so Banking mode clears
+it in one tap. **Diagnostics: what scanners see** now prints, per enabled service, its declared
+capabilities, event types, description text, whether its app declares MediaProjection /
+video-output capture / overlay, and its install and update dates — the app-level data any
+capture-based rule would have to be reading.
 
 ---
 
