@@ -93,7 +93,43 @@
 
         </LinearLayout>
 
-        <LinearLayout
+                <LinearLayout
+             android:id="@+id/accessibilityCard"
+             android:layout_height="wrap_content"
+             android:layout_width="match_parent"
+             android:layout_marginBottom="12dp"
+             android:background="@drawable/card_primary"
+             android:padding="19dp"
+             android:orientation="vertical">
+
+            <TextView
+                 android:id="@+id/tvAccessTitle"
+                 android:layout_height="wrap_content"
+                 android:layout_width="wrap_content"
+                 android:textSize="16sp"
+                 android:textColor="@color/text_primary"
+                 android:text="@string/enable_accessibility_title"
+                 android:textStyle="bold" />
+
+            <TextView
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:textSize="14sp"
+                 android:textColor="@color/text_secondary"
+                 android:layout_marginTop="8dp"
+                 android:lineSpacingExtra="3dp"
+                 android:text="@string/enable_accessibility_text" />
+
+            <Button
+                 android:id="@+id/btnEnableAccess"
+                 android:layout_height="wrap_content"
+                 android:layout_width="match_parent"
+                 android:layout_marginTop="12dp"
+                 android:text="@string/enable_accessibility_btn" />
+
+        </LinearLayout>
+
+<LinearLayout
              android:layout_height="wrap_content"
              android:layout_width="match_parent"
              android:layout_marginBottom="12dp"

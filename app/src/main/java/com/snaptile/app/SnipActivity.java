@@ -42,6 +42,7 @@ public class SnipActivity extends Activity {
     private boolean     mFullPaint;
     private SnipView    mSnipView;
     private View        mSnipSaveBtn;
+    private View        mSnipCloseBtn;
     private PaintCanvas mPaintCanvas;
     private Bitmap      mEditBitmap;
 
@@ -95,6 +96,18 @@ public class SnipActivity extends Activity {
         saveLp.setMargins(dp(14), dp(52), 0, 0);
         root.addView(mSnipSaveBtn, saveLp);
 
+        // Dismiss button — same blue style as save, always visible so a stray
+        // snip can be thrown away without saving or picking a region first.
+        mSnipCloseBtn = makeIconBtn(R.drawable.ic_close, 0xCCFFFFFF, 0xFF1D4ED8, () -> {
+            cleanup();
+            finish();
+        });
+        FrameLayout.LayoutParams closeLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP | Gravity.END);
+        closeLp.setMargins(0, dp(52), dp(14), 0);
+        root.addView(mSnipCloseBtn, closeLp);
+
         mSnipView.setOnSelectionChangedListener(has ->
                 mSnipSaveBtn.setVisibility(has ? View.VISIBLE : View.GONE));
     }
@@ -121,6 +134,7 @@ public class SnipActivity extends Activity {
 
         mSnipView.setVisibility(View.GONE);
         mSnipSaveBtn.setVisibility(View.GONE);
+        if (mSnipCloseBtn != null) mSnipCloseBtn.setVisibility(View.GONE);
         buildPaintPhase(root);
     }
 

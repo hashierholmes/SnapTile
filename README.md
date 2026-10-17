@@ -26,7 +26,7 @@ It provides three capture modes:
 - **Snip Region** — captures the display, allows the user to select a specific region, and opens the paint editor.
 - **Full Screen + Paint** — captures the entire display and opens the paint editor immediately.
 
-The project uses Android's native `MediaProjection` APIs for screen capture and keeps the entire image-processing pipeline local to the device.
+The project prefers Android's accessibility screenshot APIs (`takeScreenshot()` on API 30+, system screenshot action on API 28–29) and keeps the entire image-processing pipeline local to the device. `MediaProjection` remains only as a pre-API-28 / service-disabled fallback.
 
 SnapTile does not require a backend, network connection, account, or third-party service.
 
@@ -201,15 +201,15 @@ No API key, backend server, account, or internet connection is required.
 ### Initial Setup
 
 1. Install the SnapTile APK.
-2. Open **SnapTile** once to access the setup screen.
+2. Open **SnapTile** once, tap **Open accessibility settings**, and enable **SnapTile** (one-time, PowerMenu-style — no screen-recording prompt afterwards).
 3. Open the Android Quick Settings panel.
 4. Tap the **Edit** / pencil button.
 5. Find **SnapTile** in the available tiles.
 6. Drag the tile into the active Quick Settings area.
 
-The first capture requires Android's **MediaProjection** screen-capture authorization.
+On Android 11+ captures run through the accessibility screenshot API (no consent dialog, no recording indicator). On Android 9–10 the system screenshot action is used. `MediaProjection` remains only as a fallback for older devices or when the accessibility service is off.
 
-This permission is controlled by Android and cannot be silently granted by SnapTile.
+Accessibility access is controlled by Android and cannot be silently granted by SnapTile.
 
 ---
 

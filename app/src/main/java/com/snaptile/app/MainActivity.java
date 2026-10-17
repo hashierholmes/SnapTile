@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextPaint;
@@ -12,6 +13,7 @@ import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
 import android.view.View;
 import android.view.Window;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.snaptile.app.R;
@@ -33,7 +35,9 @@ public class MainActivity extends Activity {
         window.setNavigationBarColor(0xFF000000);
 
         setContentView(R.layout.activity_main);
-        
+
+        setupAccessCard();
+
         TextView tvDeveloperCredit =
                 findViewById(R.id.tvDeveloperCredit);
                 
@@ -68,6 +72,45 @@ public class MainActivity extends Activity {
         tvDeveloperCredit.setText(creditText);
         tvDeveloperCredit.setMovementMethod(LinkMovementMethod.getInstance());
         tvDeveloperCredit.setHighlightColor(Color.TRANSPARENT);        
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshAccessCard();
+    }
+
+    /** PowerMenu-style onboarding: one tap to system Accessibility settings. */
+    private void setupAccessCard() {
+        Button btn = findViewById(R.id.btnEnableAccess);
+        if (btn != null) {
+            btn.setOnClickListener(v -> startActivity(
+                    new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)));
+        }
+        refreshAccessCard();
+    }
+
+    private void refreshAccessCard() {
+        TextView title = findViewById(R.id.tvAccessTitle);
+        Button btn = findViewById(R.id.btnEnableAccess);
+        if (title == null || btn == null) return;
+        if (isAccessServiceOn()) {
+            title.setText(R.string.accessibility_on);
+            btn.setVisibility(View.GONE);
+        } else {
+            title.setText(R.string.enable_accessibility_title);
+            btn.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private boolean isAccessServiceOn() {
+        // Live instance is fastest (service connected at least once this boot).
+        if (ScreenshotAccessibilityService.isEnabled()) return true;
+        // Otherwise read the secure setting (covers fresh boot / process death).
+        String enabled = Settings.Secure.getString(
+                getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        return enabled != null
+                && enabled.contains(getPackageName() + "/.ScreenshotAccessibilityService");
     }
 
 }

@@ -28,7 +28,7 @@
         <service
             android:name=".ScreenshotTileService"
             android:exported="true"
-            android:icon="@drawable/ic_screenshot"
+            android:icon="@drawable/ic_tile_screenshot"
             android:label="@string/tile_label"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -64,6 +64,22 @@
             android:name=".ProjectionService"
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
+
+        <!-- Clean screenshot path (PowerMenu-style). Tile/chooser route through
+             this service: API 30+ takeScreenshot() returns a Bitmap in-app,
+             API 28-29 performGlobalAction(TAKE_SCREENSHOT) uses system UI.
+             Pre-28 falls back to CaptureActivity + ProjectionService above. -->
+        <service
+            android:name=".ScreenshotAccessibilityService"
+            android:exported="true"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
 
     </application>
 </manifest>

@@ -17,7 +17,10 @@ import android.widget.TextView;
  * Lightweight modal chooser shown after the Quick Settings tile is tapped.
  *
  * The chooser does not capture anything itself. It only turns the user's selection
- * into one of the mode constants consumed by {CaptureActivity}.
+ * into one of the mode constants consumed by the screenshot flow.
+ *
+ * Preferred path is ScreenshotAccessibilityService (no MediaProjection consent).
+ * CaptureActivity (MediaProjection) is kept only as a pre-API-28 fallback.
  */
 public class ScreenshotChooserActivity extends Activity {
 
@@ -100,12 +103,19 @@ public class ScreenshotChooserActivity extends Activity {
 
     private void pick(String mode) {
         finish();
-        getWindow().getDecorView().postDelayed(() -> {
+        // Give the chooser dialog time to fully detach before capturing.
+        // The old MediaProjection path took 850ms+ (consent + VirtualDisplay
+        // setup), which hid this race. The accessibility path fires in ~50ms,
+        // so SnipActivity used to land underneath the still-visible dialog.
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            // Clean path first: accessibility service (no screen-record prompt).
+            if (ScreenshotAccessibilityService.requestScreenshot(mode)) return;
+            // Fallback: service not enabled / pre-API-28 -> legacy MediaProjection.
             Intent i = new Intent(this, CaptureActivity.class);
             i.putExtra(EXTRA_MODE, mode);
             i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(i);
-        }, 50);
+        }, 350);
     }
 
     private View div() {
