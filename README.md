@@ -213,6 +213,52 @@ Accessibility access is controlled by Android and cannot be silently granted by 
 
 ---
 
+## Banking / UPI apps and accessibility
+
+Some banking and UPI apps warn (or block) when *any* third-party accessibility service is
+enabled. Those checks are **presence-based**, not capability-based: the app lists every
+enabled service and warns about it, because it cannot tell a legitimate tool from
+banking malware. That is why minimising SnapTile's declared capabilities does not, on
+its own, silence the warning.
+
+SnapTile's service is still deliberately screenshot-only, which keeps it honest and
+future-proof if a checker ever does look at capabilities:
+
+- `accessibilityEventTypes="typeWindowsChanged"` instead of `typeAllMask`
+- `canRetrieveWindowContent="false"` — cannot read any app's views or text
+- `canPerformGestures="false"` — cannot tap or type for you
+- `canRequestFilterKeyEvents="false"` — cannot see keystrokes
+- `onAccessibilityEvent()` processes nothing; the service exists only to answer
+  `takeScreenshot()` / `GLOBAL_ACTION_TAKE_SCREENSHOT`
+
+The event, feedback and flag fields are re-asserted at runtime in
+`ScreenshotAccessibilityService.onServiceConnected()`, so the *live*
+`AccessibilityServiceInfo` that scanners read also reports window-changes-only rather
+than `typeAllMask`. (Android's public API has no runtime setter for capabilities —
+those come from the XML above.)
+
+## Banking mode (in-app)
+
+The app's first card has a **Turn off for banking / UPI apps** button, shown whenever the
+screenshot service is on. It calls `AccessibilityService.disableSelf()`, so SnapTile's
+service is switched off without digging through Settings — the warnings stop and the
+card switches to an "Accessibility is off — banking-safe" state.
+
+Capture keeps working while the service is off:
+
+- the Quick Settings tile opens the chooser and falls back to Android's MediaProjection
+  consent dialog (one tap per capture),
+- all three modes (full, region, full + paint) are available on that path,
+- the tile never redirects you into Accessibility settings, so you are not trained to
+  leave the service on.
+
+Re-enabling always has to be done by you (Android does not allow an app to enable its own
+accessibility service) — the same card then shows **Open accessibility settings**.
+`disableSelf()` needs Android 7.0+; on older releases the button sends you to Settings
+instead.
+
+---
+
 ## Build
 
 Clone the repository:

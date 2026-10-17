@@ -46,6 +46,33 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
         return sInstance != null;
     }
 
+    /**
+     * Banking mode — turn SnapTile's own service off so bank/UPI apps stop warning.
+     *
+     * Banking and UPI security SDKs flag *any* enabled third-party accessibility
+     * service (they cannot tell a legitimate tool from malware), so the only fix
+     * is for the service to not be enabled while the user pays. disableSelf() is
+     * the one route an app is allowed to take; re-enabling always requires the
+     * user, which is by design in Android's security model.
+     *
+     * @return true if the service disabled itself; false when it was not bound or
+     *         the platform is too old (API < 24), in which case the caller must
+     *         send the user to Settings.
+     */
+    public static boolean disableForBanking() {
+        // disableSelf() was added in API 24 (Nougat).
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return false;
+        ScreenshotAccessibilityService svc = sInstance;
+        if (svc == null) return false;
+        try {
+            svc.disableSelf();
+            sInstance = null;   // reflect the new state immediately; onUnbind() is the backstop
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
@@ -81,6 +108,12 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
     public boolean onUnbind(Intent intent) {
         sInstance = null;
         return super.onUnbind(intent);
+    }
+
+    @Override
+    public void onDestroy() {
+        sInstance = null;
+        super.onDestroy();
     }
 
     @Override

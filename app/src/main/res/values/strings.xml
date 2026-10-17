@@ -20,4 +20,9 @@
     <string name="enable_accessibility_text">SnapTile takes screenshots cleanly via an accessibility service (no screen-recording prompt). Turn it on once under Accessibility → SnapTile.</string>
     <string name="enable_accessibility_btn">Open accessibility settings</string>
     <string name="accessibility_on">Screenshot access is on ✓</string>
+    <string name="banking_mode_btn">Turn off for banking / UPI apps</string>
+    <string name="banking_mode_title">Accessibility is off — banking-safe ✓</string>
+    <string name="banking_mode_text">Bank and UPI apps warn about any enabled third-party accessibility service, even one like SnapTile that only takes screenshots. It is now off, so those warnings stop. The tile still captures — Android asks for screen-capture consent each time. Turn it back on above for prompt-free capture.</string>
+    <string name="banking_mode_toast">Accessibility turned off. Re-enable it any time from this screen.</string>
+    <string name="banking_mode_settings">Turn SnapTile off under Accessibility settings</string>
 </resources>
