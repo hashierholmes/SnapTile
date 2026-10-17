@@ -1,56 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Screenshot-only service, deliberately minimal.
+<!-- Screenshot-only service, minimal by policy as of 1.2.1.
 
-     What is left here is the smallest declaration that still takes a screenshot
-     inside the app: the screenshot capability, no window content, no key events,
-     no gestures, no event types. Everything else this service used to declare was
-     removed one at a time to test whether it was what bank/UPI scanners read, and
-     every one of those tests came back negative:
+     This file declares exactly what the reference implementation,
+     github.com/cvzi/ScreenshotTile, declares - an event type, a feedback type and
+     a description - which is the practical minimum for an accessibility service
+     that takes screenshots. Everything else that was ever in here is gone: the
+     screenshot capability, the flags, and the explicit false-declarations for
+     window content, gestures, touch exploration and key filtering. None of it is
+     needed to take a screenshot, and none of it was what the bank/UPI warning
+     keyed on. The elimination matrix, in order:
 
        1.1.9  canTakeScreenshot removed            -> still flagged
        1.1.12 accessibilityEventTypes removed      -> still flagged
        1.1.13 canTakeScreenshot removed (both)     -> still flagged
        1.1.14 mediaProjection declaration removed  -> still flagged
        1.1.16 isAccessibilityTool="true" added     -> still flagged
+       1.2.0  twin service: neutral class name
+              and neutral description text          -> still flagged
+       1.2.0  the same warning, on the signed
+              release build rather than the
+              debug build                           -> still flagged
 
-     1.1.16 is the reason the flag is gone. It was set at the owner's request
-     against the expectation, written down beforehand, that it would change
-     nothing — and it changed nothing. It was also a false declaration: SnapTile
-     is a screenshot tool anyone can use, not a service that exists to assist
-     users with disabilities, which is what the flag asserts, and Google's own
-     guidance says declaring it without that purpose is what triggers a Play
-     Protect warning naming the app. A false claim that also bought nothing does
-     not belong in the tree.
+     That is the whole space of configurable variables, and every one of them came
+     back negative. The ScreenshotTile comparison said the same thing from outside:
+     a widely used, store-distributed screenshot app, with a config emptier than
+     anything SnapTile ever shipped, is flagged too. The warning follows the app -
+     a screenshot tool that has an accessibility service enabled - not a field in
+     this file, a class name or a description string. Nothing in a build can change
+     it, which is why the shipped answer is the capture-method choice on the main
+     screen rather than another config experiment.
 
-     canTakeScreenshot came back in 1.2.0, and the reason is the matrix above: it
-     was tested in both directions, and the answer was identical both times, so it
-     is free. With it declared, takeScreenshot() returns the bitmap in-app, which
-     is what makes region and paint modes work without a consent dialog. A build
-     without it still captures: the service detects the missing capability at
-     request time and routes accordingly (see
-     ScreenshotAccessibilityService.hasScreenshotCapability()).
+     Runtime note: capabilities are not settable through the public API, so their
+     absence here is absolute. takeScreenshot() cannot succeed in this build;
+     ScreenshotAccessibilityService detects that and routes full-screen captures to
+     performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT) (the system takes and saves
+     the shot, no consent) and region/paint captures to MediaProjection (consent
+     dialog). See ScreenshotAccessibilityService.handleRequest().
 
-     The external check on all of this is ScreenshotTile
-     (github.com/cvzi/ScreenshotTile), which Super Money flags too. Its
-     accessibility config declares one event type and a description and no
-     capability at all — less than anything SnapTile has ever shipped — and it is
-     flagged anyway. So the trigger is not a field in this file. It is the app
-     presenting itself as a screenshot tool with an accessibility service enabled,
-     which is a property of this whole category of app, not of a configuration.
-
-     One trap when reading the built APK: this attribute set only exists in the
-     -v22 resource variant. aapt2 strips attributes newer than minSdk (21) out of
-     the base res/xml file and writes them to res/xml-v22/, so dumping the base
-     variant shows seven attributes and looks exactly like the capability and
-     flags were silently dropped. An API 36 device reads the versioned variant.
-     Check res/xml-v22/ before concluding anything about this file. -->
+     One trap when reading the built APK: attributes newer than minSdk (21) exist
+     only in the -v22 resource variant, because aapt2 strips them out of the base
+     res/xml file. An API 36 device reads the versioned variant, so always inspect
+     res/xml-v22/ before concluding anything about this file. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
-    android:accessibilityFlags="flagDefault"
-    android:canRetrieveWindowContent="false"
-    android:canRequestTouchExplorationMode="false"
-    android:canRequestFilterKeyEvents="false"
-    android:canPerformGestures="false"
-    android:canTakeScreenshot="true"
-    android:description="@string/accessibility_desc"
-    android:summary="@string/accessibility_desc" />
+    android:description="@string/accessibility_desc" />

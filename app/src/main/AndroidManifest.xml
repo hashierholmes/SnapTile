@@ -118,9 +118,14 @@
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
 
-        <!-- Native capture path. Tile/chooser route through this service: API 30+
-             takeScreenshot() returns a Bitmap in-app, API 28+ falls back to
-             performGlobalAction(TAKE_SCREENSHOT), pre-28 to MediaProjection. -->
+        <!-- Native capture path. Tile/chooser route through this service. Its
+             config declares no capability as of 1.2.1 (the ScreenshotTile
+             minimum), so API 30+ full-screen captures go through
+             performGlobalAction(TAKE_SCREENSHOT) and region/paint captures
+             through MediaProjection. The 1.1.15 diagnostic twin service was
+             removed in the same release: it existed only for the naming test,
+             that test came back negative, and a second accessibility entry in a
+             shipped app is a liability rather than a feature. -->
         <service
             android:name=".ScreenshotAccessibilityService"
             android:exported="true"
@@ -131,23 +136,6 @@
             <meta-data
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
-        </service>
-
-        <!-- Diagnostic twin, 1.1.15. Same service behaviour, same accessibility
-             config, different class name and description text. Enable this one
-             instead of the service above to test whether the warning reads what
-             an app says about itself; keep exactly one of the two enabled. -->
-        <service
-            android:name=".TileAssistService"
-            android:exported="true"
-            android:label="@string/a11y_label_twin"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_service_config_twin" />
         </service>
 
     </application>

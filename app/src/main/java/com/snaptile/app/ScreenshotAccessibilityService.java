@@ -19,19 +19,13 @@ import androidx.annotation.RequiresApi;
  *
  * MediaProjection needs a consent dialog and a foreground service; this does not:
  *
- *  - API 30+ : takeScreenshot(displayId, executor, callback) returns a Bitmap
- *              directly to the app, so all three SnapTile modes work. It needs
- *              CAPABILITY_CAN_TAKE_SCREENSHOT, which the config declares as of
- *              1.2.0 and withheld in 1.1.13-1.1.16. Declaring it costs nothing:
- *              the flagging question was tested in both directions (1.1.11/1.1.12
- *              declared it and were flagged; 1.1.13 withheld it and was flagged
- *              identically), so the capability is not what a bank or UPI scanner
- *              reads. Without it the service detects that at request time and
- *              routes full-screen captures to the system screenshot action, and
- *              region/paint captures to the legacy path.
- *  - API 28-29 : performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT) triggers the
- *              system screenshot UI. System owns save/share, so only full-screen
- *              mode can use it.
+ *  - API 30+ : performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT) makes the
+ *              system take and save the shot with no consent dialog. That needs
+ *              no capability, and since 1.2.1 it is the only full-screen route
+ *              here: the config declares no capability at all, matching the
+ *              ScreenshotTile minimum. Region and paint modes need the bitmap in
+ *              the app, so they go through MediaProjection (consent) instead.
+ *  - API 28-29 : the same global action; same global action since API 28.
  *  - API <28 : no accessibility screenshot API — MediaProjection (CaptureActivity).
  *
  * Whether this path runs at all is the user's choice in {@link CapturePrefs}: with
@@ -101,14 +95,16 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
     /**
      * Re-assert the minimal event/feedback/flags set at runtime.
      *
-     * The *capabilities* (read window content, filter key events, inject gestures)
-     * are not settable through the public API — they come from
-     * res/xml/accessibility_service_config.xml, which declares nothing but the
-     * screenshot capability. These three fields are settable, so pin them here to
-     * keep the live AccessibilityServiceInfo identical to the XML on every OEM
-     * (risk SDKs read the live info, not just the declared XML).
+     * The *capabilities* (read window content, filter key events, inject gestures,
+     * take screenshots) are not settable through the public API, and as of 1.2.1
+     * the config declares none of them either — it is the ScreenshotTile minimum:
+     * an event type, a feedback type and a description. These three fields are
+     * settable, so pin them here to keep the live AccessibilityServiceInfo
+     * identical to the XML on every OEM (risk SDKs read the live info, not just
+     * the declared XML).
      * eventTypes is pinned to 0 because the service consumes no events (see
-     * onAccessibilityEvent), so requesting none is honest. It also has to be pinned
+     * onAccessibilityEvent), so requesting none is honest even though the XML
+     * mirrors the reference app's typeWindowStateChanged. It also has to be pinned
      * here: leaving a declared value in place would re-impose it at runtime on top
      * of the XML, and the live info is what a scanner reads.
      */
@@ -152,11 +148,12 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
             if (hasScreenshotCapability()) {
                 takeScreenshotCompat();
             } else if (ScreenshotChooserActivity.MODE_FULL.equals(sPendingMode)) {
-                // No capability in this build's config (or an OEM withheld it).
-                // A global action needs no capability, so let the system take the
-                // shot and own the result — same route as API 28-29. Region and
-                // paint modes need the bitmap in-app, so they go to MediaProjection
-                // instead of silently degrading to a system screenshot.
+                // No capability: 1.2.1's config declares none, and an OEM could
+                // withhold it even if one were declared. A global action needs no
+                // capability, so let the system take the shot and own the result —
+                // the same route as API 28-29. Region and paint modes need the
+                // bitmap in-app, so they go to MediaProjection instead of silently
+                // degrading to a system screenshot.
                 systemScreenshot();
             } else {
                 startLegacyCapture();
@@ -175,17 +172,18 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
     /**
      * System-owned screenshot: performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT).
      *
-     * Needs no capability and no permission, so it also works in builds that
-     * withhold CAPABILITY_CAN_TAKE_SCREENSHOT. The system saves the image and
+     * Needs no capability and no permission, so it works in this build (whose
+     * config declares no capability by design) and on API 28-29, where the
+     * accessibility screenshot API does not exist. The system saves the image and
      * shows its own UI; SnapTile only gets a bitmap through takeScreenshot(),
-     * which is why region/paint modes need either the capability or the
-     * MediaProjection path.
+     * which is why region/paint modes take the MediaProjection path instead.
+     *
+     * The message is deliberately plain: this is the normal route for full-screen
+     * captures, not a degraded one, so there is nothing for the user to fix.
      */
     private void systemScreenshot() {
         boolean ok = performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT);
-        toast(ok
-                ? "System screenshot taken — this device has no in-app screenshot capability"
-                : "Screenshot failed");
+        toast(ok ? "Screenshot taken" : "Screenshot failed");
     }
 
     /**

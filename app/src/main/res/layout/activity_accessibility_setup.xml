@@ -2,15 +2,25 @@
 <!--
     Setup screen for the native (accessibility) capture method.
 
-    Two things it has to do, in this order: say why SnapTile needs the service at
-    all, then show the two taps that Android hides behind "restricted settings"
-    for side-loaded apps. The illustration is drawn rather than screenshotted -
-    a schematic of the App info page and its overflow menu, with the two taps
-    marked - so it stays correct across Android versions and OEM skins, and so it
-    needs no asset that can go stale.
+    Three things it has to do, in this order: say why SnapTile needs the service
+    at all, then walk the order Android actually enforces for a side-loaded app,
+    then get out of the way.
 
-    Steps 1-3 are also spelled out in words: the drawing is the shortcut, not the
-    only way to read it.
+    The order is the part that has been wrong before. It is not "go to App info
+    and allow restricted settings": Android only puts that row in the App info
+    overflow menu after the user has tried to enable the service and been
+    refused, so the first tap belongs in Accessibility settings, on the greyed
+    out entry. Step 1 exists to produce the refusal; step 2 spends it; step 3 is
+    the switch that finally works. Someone who goes to App info first finds no
+    such row and nothing to explain why.
+
+    The two buttons are numbered to match: 1 opens Accessibility settings, 2
+    opens App info, and step 3 sends the user back to button 1. The illustration
+    is drawn rather than screenshotted - a schematic of the App info page and the
+    menu its overflow opens, with the two taps marked 1 and 2 - so it stays
+    correct across Android versions and OEM skins, and so it needs no asset that
+    can go stale. Its numbers are the two taps inside step 2, which is exactly
+    what the caption above it says.
 -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -271,18 +281,18 @@
         </LinearLayout>
 
         <Button
-            android:id="@+id/btnAllowRestricted"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/setup_allow_btn" />
-
-        <Button
             android:id="@+id/btnOpenA11y"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="16dp"
             android:text="@string/setup_open_btn" />
+
+        <Button
+            android:id="@+id/btnAllowRestricted"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/setup_allow_btn" />
 
         <Button
             android:id="@+id/btnSetupClose"

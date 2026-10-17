@@ -16,11 +16,6 @@
     <string name="drag_to_select">Drag to select region</string>
     <string name="capture_region">Capture</string>
     <string name="accessibility_desc">SnapTile uses an accessibility service only to take screenshots when you tap the Quick Settings tile. No other data is collected.</string>
-    <!-- Diagnostic twin (1.1.15): same service, same config, different name and
-         wording, to test whether the bank/UPI warning reads what an app says
-         about itself. Odds are this string is temporary. -->
-    <string name="accessibility_desc_neutral">SnapTile uses an accessibility service to carry out the action of its Quick Settings tile. Nothing else is read and no data is collected.</string>
-    <string name="a11y_label_twin">SnapTile tile action</string>
     <string name="enable_accessibility_title">Enable screenshot access</string>
     <string name="enable_accessibility_text">SnapTile takes screenshots cleanly via an accessibility service (no screen-recording prompt). Turn it on once under Accessibility → SnapTile.</string>
     <string name="enable_accessibility_btn">Open accessibility settings</string>
@@ -37,7 +32,7 @@
          spelled out in each description rather than hidden behind a toggle. -->
     <string name="method_title">Capture method</string>
     <string name="method_native">Native — accessibility</string>
-    <string name="method_native_desc">Tap the tile and the shot is taken at once. No prompt and no consent dialog, which is what lets SnapTile snip a region and open the paint editor. Needs SnapTile\'s accessibility service switched on — and banks and UPI apps warn about any enabled accessibility service, so they will warn about this one.</string>
+    <string name="method_native_desc">Tap the tile and the shot is taken at once — no prompt and no consent dialog. Full-screen shots are saved by Android itself; region and paint go through Android\'s screen-recording consent. Needs SnapTile\'s accessibility service switched on — and banks and UPI apps warn about any enabled accessibility service, so they will warn about this one.</string>
     <string name="method_legacy">Legacy — screen recording</string>
     <string name="method_legacy_desc">Android\'s own capture consent, the way any screen recorder works. No accessibility service is needed, so banking and UPI apps stay quiet. Android asks before each capture, so it is one extra tap every time.</string>
     <string name="method_setup_btn">Set up the accessibility method</string>
@@ -45,20 +40,20 @@
     <string name="method_native_toast">Native method on. Turn on SnapTile\'s accessibility service to use it.</string>
 
     <string name="setup_title">Accessibility method</string>
-    <string name="setup_intro">Turn on SnapTile\'s accessibility service below. It is what the native capture method uses, and Android only lets you enable it, never the app itself.</string>
+    <string name="setup_intro">SnapTile\'s accessibility service is what the native method captures through, and only you can switch it on — Android never lets an app enable it for itself. For an app installed outside a store there is one extra step in front of that, so do these in order.</string>
     <string name="setup_why">SnapTile captures through an accessibility service so it can take the shot without Android\'s screen-recording prompt. That service has to be switched on by you — Android does not allow an app to enable it for itself.</string>
-    <string name="setup_not_enabled">SnapTile\'s accessibility service is off, so the native method cannot capture yet. Turn it on below, or switch SnapTile to the Legacy method on the main screen.</string>
+    <string name="setup_not_enabled">SnapTile\'s accessibility service is off, so the native method cannot capture yet. Turn it on below — start at step 1 — or switch SnapTile to the Legacy method on the main screen.</string>
     <string name="setup_enabled">SnapTile\'s accessibility service is on ✓ — the native method is ready.</string>
     <string name="setup_restricted_head">If the SnapTile switch is greyed out</string>
-    <string name="setup_restricted_body">On Android 13 and newer, Android hides this switch for apps that were installed outside a store. It is Android\'s rule for side-loaded apps, not something SnapTile can ask for at install time. Two taps fix it for good.</string>
-    <string name="setup_step1">Tap ALLOW RESTRICTED SETTINGS below. Android opens SnapTile\'s App info page.</string>
-    <string name="setup_step2">Tap the three dots (⋮) at the top right there.</string>
-    <string name="setup_step3">Tap "Allow restricted settings", then come back and turn on SnapTile under Accessibility.</string>
-    <string name="setup_illustration_label">WHAT THE TWO TAPS LOOK LIKE</string>
+    <string name="setup_restricted_body">On Android 13 and newer, Android hides this switch for apps installed outside a store — Android\'s rule for side-loaded apps, not something SnapTile can ask for at install time. The order below matters: the “Allow restricted settings” row only appears in the App info menu after you have tried the greyed-out switch once and been refused, which is why this screen starts in Accessibility settings rather than in App info.</string>
+    <string name="setup_step1">Tap 1 · OPEN ACCESSIBILITY SETTINGS below, then tap SNAPTILE in the list. The switch there is greyed out and Android tells you a restricted setting is blocking it. That is expected, and making the attempt is what unlocks step 2.</string>
+    <string name="setup_step2">Tap 2 · OPEN APP INFO below — that is SnapTile\'s App info page — then ⋮ at the top right, then “Allow restricted settings”.</string>
+    <string name="setup_step3">Tap 1 again to reopen Accessibility settings, tap SNAPTILE, and turn the switch on. It is live now, and it stays on.</string>
+    <string name="setup_illustration_label">STEP 2 IN DETAIL — TAP 1, THEN TAP 2</string>
     <string name="setup_mock_appinfo">App info</string>
     <string name="setup_mock_row">Allow restricted settings</string>
     <string name="setup_mock_overflow">⋮</string>
-    <string name="setup_allow_btn">ALLOW RESTRICTED SETTINGS</string>
-    <string name="setup_open_btn">OPEN ACCESSIBILITY SETTINGS</string>
+    <string name="setup_allow_btn">2 · OPEN APP INFO</string>
+    <string name="setup_open_btn">1 · OPEN ACCESSIBILITY SETTINGS</string>
     <string name="setup_close_btn">CLOSE</string>
 </resources>

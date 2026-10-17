@@ -13,12 +13,16 @@ import android.provider.Settings;
  *
  *  - NATIVE (default) goes through {@link ScreenshotAccessibilityService}. No
  *    consent dialog, no screen-recording indicator: one tap on the tile and the
- *    bitmap is in the app, which is what makes the region and paint modes
- *    possible. It requires an enabled accessibility service, and every bank and
- *    UPI app treats an enabled accessibility service as a risk signal and warns
- *    about it — including for apps that plainly only take screenshots. That is a
- *    property of the whole category, not of SnapTile's configuration: the
- *    otherwise-minimal, widely used ScreenshotTile app is flagged the same way.
+ *    shot is taken. Full-screen captures are taken and saved by the system itself
+ *    (the service declares no screenshot capability by design as of 1.2.1 — the
+ *    ScreenshotTile minimum), and region/paint captures go through the
+ *    MediaProjection path, so they do show consent. It requires an enabled
+ *    accessibility service, and every bank and UPI app treats an enabled
+ *    accessibility service as a risk signal and warns about it — including for
+ *    apps that plainly only take screenshots. That is a property of the whole
+ *    category, not of SnapTile's configuration: the otherwise-minimal, widely used
+ *    ScreenshotTile app is flagged the same way, in either direction, and so was
+ *    every one of the configurations SnapTile shipped while testing it.
  *
  *  - LEGACY goes through {@link CaptureActivity} and Android's MediaProjection
  *    consent dialog, exactly like any screen recorder. Nothing about it needs an
@@ -58,12 +62,14 @@ public final class CapturePrefs {
     }
 
     /**
-     * True when SnapTile has an accessibility service enabled — either entry.
+     * True when SnapTile has an accessibility service enabled.
      *
-     * Both entries behave identically (the second one exists only for the naming
-     * test), so the question is never "which class", always "does this package
-     * have one enabled". Asking the secure setting rather than the live static
-     * instance also covers a fresh boot, before the service has been bound.
+     * The question is never "which class" — the 1.1.15 diagnostic twin is gone as
+     * of 1.2.1 — always "does this package have one enabled". Asking the secure
+     * setting rather than the live static instance also covers a fresh boot,
+     * before the service has been bound. The package-prefix check rather than an
+     * exact component match is deliberate: it survives a future rename of the
+     * service class without going stale.
      */
     public static boolean isAccessibilityEnabled(Context c) {
         if (ScreenshotAccessibilityService.isEnabled()) return true;

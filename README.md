@@ -26,7 +26,10 @@ It provides three capture modes:
 - **Snip Region** — captures the display, allows the user to select a specific region, and opens the paint editor.
 - **Full Screen + Paint** — captures the entire display and opens the paint editor immediately.
 
-The project prefers Android's accessibility screenshot APIs (`takeScreenshot()` on API 30+, system screenshot action on API 28–29) and keeps the entire image-processing pipeline local to the device. `MediaProjection` remains only as a pre-API-28 / service-disabled fallback.
+Capture is prompt-free for full-screen shots: on API 28+ the accessibility service asks the system to
+take the screenshot itself, and the image-processing pipeline stays entirely local to the device.
+Region and paint need the bitmap inside the app, so they use `MediaProjection` and its consent
+dialog — as does every capture on older releases or while the accessibility service is off.
 
 SnapTile does not require a backend, network connection, account, or third-party service.
 
@@ -69,47 +72,37 @@ SnapTile does not require a backend, network connection, account, or third-party
 [ ScreenshotTileService ]
             │
             ▼
-[ ScreenshotChooserActivity ]
-            │
-       Capture Mode
+[ ScreenshotChooserActivity ] ──► capture mode
             │
             ▼
-[ CaptureActivity ]
+[ CapturePrefs.request() ] ──► which capture method?
             │
-     MediaProjection
-       Authorization
-            │
-            ▼
-[ ProjectionService ]
-            │
-    Foreground Service
-            │
-            ▼
-[ VirtualDisplay + ImageReader ]
-            │
-       Single Frame
-            │
-            ▼
-         [ Bitmap ]
-            │
-      ┌─────┼───────────────┐
-      │     │               │
-      ▼     ▼               ▼
- Full Screen │        Full + Paint
-      │     │               │
-      │     ▼               │
-      │ [ SnipActivity ] ◄──┘
-      │     │
-      │     ├─ Region Selection
-      │     │
-      │     └─ Paint Editor
-      │
-      └──────────┬────────────┘
-                 ▼
-          [ ImageSaver ]
-                 │
-                 ▼
-      Pictures/Screenshots/
+   ┌────────┴───────────────────────────┐
+   ▼                                    ▼
+[ Native ]                         [ Legacy ]
+[ ScreenshotAccessibilityService ] [ CaptureActivity ]
+   │                                   │
+   │ full screen:                      │ MediaProjection consent
+   │ GLOBAL_ACTION_TAKE_SCREENSHOT     ▼
+   │ → the system saves the shot   [ ProjectionService ]
+   │                                   │ foreground service
+   │ region / paint:                   ▼
+   └──────────────► [ VirtualDisplay + ImageReader ]
+                        │
+                   Single Frame
+                        │
+                    [ Bitmap ]
+                        │
+       ┌────────────────┼────────────────┐
+       ▼                ▼                ▼
+  Full Screen     [ SnipActivity ]   Full + Paint
+                  Region / Paint
+                        │
+                        ▼
+                  [ ImageSaver ]
+                        │
+                        ▼
+               Pictures/Screenshots/
 ```
 
 ---
@@ -118,14 +111,18 @@ SnapTile does not require a backend, network connection, account, or third-party
 
 | Component | Responsibility |
 | :--- | :--- |
-| `MainActivity` | Provides the launcher/setup screen and developer credit. |
+| `MainActivity` | Provides the launcher/setup screen, the capture-method card, and developer credit. |
 | `ScreenshotTileService` | Exposes SnapTile through Android Quick Settings. |
 | `ScreenshotChooserActivity` | Allows the user to select the desired capture mode. |
+| `CapturePrefs` | Stores the chosen capture method and routes every capture request by it. |
+| `ScreenshotAccessibilityService` | The native capture path: system screenshot action for full screen, and the fallback into MediaProjection for region/paint or older releases. |
+| `AccessibilitySetupActivity` | The how-to-enable screen, including the restricted-settings step Android hides from side-loaded apps. |
 | `CaptureActivity` | Handles MediaProjection authorization, screen capture, bitmap creation, and capture-mode routing. |
 | `ProjectionService` | Provides the short-lived foreground service required while MediaProjection is active. |
 | `SnipActivity` | Provides region selection and the current screenshot paint editor. |
 | `ImageSaver` | Writes captured or edited screenshots to shared storage as PNG files. |
 | `PaintToolbar` | Standalone drawing-toolbar helper kept separate from the current `SnipActivity` editor implementation. |
+| `DiagnosticsActivity` | Read-only dump of what accessibility scanners can see, for debugging the banking/UPI warning. |
 
 ---
 
@@ -166,6 +163,7 @@ SnapTile relies primarily on native Android framework APIs:
 - `Path` — records individual drawing strokes for reversible editing.
 - `Paint` — stores brush appearance and rendering properties.
 - `TileService` — integrates SnapTile with Android Quick Settings.
+- `AccessibilityService` — performs the system screenshot action for the native capture method.
 - `Service` — provides the foreground-service execution required during screen projection.
 - `MediaStore` — stores screenshots in the system's shared media collection on modern Android versions.
 - `ContentResolver` — writes screenshot data through Android's storage APIs.
@@ -201,13 +199,19 @@ No API key, backend server, account, or internet connection is required.
 ### Initial Setup
 
 1. Install the SnapTile APK.
-2. Open **SnapTile** once, tap **Open accessibility settings**, and enable **SnapTile** (one-time, PowerMenu-style — no screen-recording prompt afterwards).
+2. Open **SnapTile** once. On the **Capture method** card, leave **Native — accessibility** selected
+   and tap **Set up the accessibility method**: that screen walks the three steps in the order
+   Android enforces them (Accessibility settings → App info + ⋮ → Allow restricted settings →
+   Accessibility settings again). One-time; captures are prompt-free afterwards.
 3. Open the Android Quick Settings panel.
 4. Tap the **Edit** / pencil button.
 5. Find **SnapTile** in the available tiles.
 6. Drag the tile into the active Quick Settings area.
 
-On Android 11+ captures run through the accessibility screenshot API (no consent dialog, no recording indicator). On Android 9–10 the system screenshot action is used. `MediaProjection` remains only as a fallback for older devices or when the accessibility service is off.
+On Android 9+ full-screen captures use the system screenshot action (no consent dialog, no recording
+indicator). Region and paint need the bitmap inside the app, so they go through `MediaProjection`'s
+consent dialog — as does any capture on Android 8 and older, or while the accessibility service is
+off.
 
 Accessibility access is controlled by Android and cannot be silently granted by SnapTile.
 
@@ -215,27 +219,31 @@ Accessibility access is controlled by Android and cannot be silently granted by 
 
 ## Banking / UPI apps and accessibility
 
-Some banking and UPI apps warn (or block) when *any* third-party accessibility service is
-enabled. Those checks are **presence-based**, not capability-based: the app lists every
-enabled service and warns about it, because it cannot tell a legitimate tool from
-banking malware. That is why minimising SnapTile's declared capabilities does not, on
-its own, silence the warning.
+Some banking and UPI apps warn when *any* third-party accessibility service is enabled. The checks
+are **presence-based** in the only sense that matters: nothing about the service's declaration,
+capability, class name, description text or provenance changes the outcome. Every one of those
+variables was tested — see [What we know so far](#what-we-know-so-far-2026-10-17) — which is why
+minimising SnapTile's declared capabilities cannot, on its own, silence the warning.
 
-SnapTile's service is still deliberately screenshot-only, which keeps it honest and
-future-proof if a checker ever does look at capabilities:
+SnapTile's service is still deliberately screenshot-only, and since 1.2.1 it declares **exactly what
+ScreenshotTile declares**: the smallest config an accessibility service can have and still take a
+screenshot.
 
-- `accessibilityEventTypes="typeWindowsChanged"` instead of `typeAllMask`
-- `canRetrieveWindowContent="false"` — cannot read any app's views or text
-- `canPerformGestures="false"` — cannot tap or type for you
-- `canRequestFilterKeyEvents="false"` — cannot see keystrokes
-- `onAccessibilityEvent()` processes nothing; the service exists only to answer
-  `takeScreenshot()` / `GLOBAL_ACTION_TAKE_SCREENSHOT`
+```xml
+<accessibility-service
+    android:accessibilityEventTypes="typeWindowStateChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:description="@string/accessibility_desc" />
+```
+
+No capability at all — no window content, no gestures, no keystroke filtering, not even the
+screenshot capability. There is nothing declared that the app does not use: `onAccessibilityEvent()`
+processes nothing, and the service exists only to answer `GLOBAL_ACTION_TAKE_SCREENSHOT`.
 
 The event, feedback and flag fields are re-asserted at runtime in
-`ScreenshotAccessibilityService.onServiceConnected()`, so the *live*
-`AccessibilityServiceInfo` that scanners read also reports window-changes-only rather
-than `typeAllMask`. (Android's public API has no runtime setter for capabilities —
-those come from the XML above.)
+`ScreenshotAccessibilityService.onServiceConnected()`, with event types pinned to `0` because the
+service consumes none, so the *live* `AccessibilityServiceInfo` a scanner reads is a subset of the
+file. (Android's public API has no runtime setter for capabilities: those come from the XML.)
 
 ## Banking mode (in-app)
 
@@ -312,23 +320,35 @@ dump:
   and is not flagged. The only differences left are `isAccessibilityTool` (true there, false
   here), its install source, and what the two apps say about themselves.
 
-So `1.1.15` tests the two remaining explanations, and both are readable on the Diagnostics
+So `1.1.15` tested the two remaining explanations, and both are readable on the Diagnostics
 screen:
 
 1. **The scanner reads what an app says about itself** — the bound class name
    (`ScreenshotAccessibilityService`) and the description text ("...only to take screenshots...")
-   are both readable out of the accessibility list with no permission at all. 1.1.15 declares a
+   are both readable out of the accessibility list with no permission at all. 1.1.15 declared a
    **twin service** (`TileAssistService`, "SnapTile tile action") with identical behaviour and
    an identical config, but a neutral class name and wording. Enable exactly one of the two
-   SnapTile entries and compare. *Twin clean → the fix is a rename, not a config change.*
-2. **"Unknown app + enabled accessibility service" is enough on its own** — the `a11yprobe`
-   apps are side-loaded packages with no history. Enable one alongside SnapTile: if the warning
-   names it too, the rule is generic and no build can fix it for a side-loaded app.
+   SnapTile entries and compare. **Result: still flagged.** The class name and the description are
+   not read either, and the twin was deleted in 1.2.1.
+2. **"Unknown app + enabled accessibility service" is enough on its own** — the `a11yprobe` apps
+   are side-loaded packages with no history. Enable one alongside SnapTile: if the warning names it
+   too, the rule is generic and no build can fix it for a side-loaded app. **Not needed** — the test
+   below answered it first.
 
-If both come back negative, the honest position is that nothing in the app can change this, and
-the two durable options are the ones already on the table: **Banking mode** (keep the service,
-accept the warning while it is on) or an **architecture without an accessibility service**
-(MediaProjection-only capture: no warning, one consent dialog per capture).
+**The control that should have been run first.** The 1.2.0 screenshot of the Super Money dialog
+named exactly one app: **"SnapTile Debug"** — the debug package (`com.snaptile.app.debug`,
+`application-debuggable`, label "SnapTile Debug"), while Key Mapper (window content, gesture
+injection, key filtering, side-loaded) sat enabled in the same list and was *not* named. That
+suggested the rule might simply be "debuggable app with an enabled accessibility service", which
+would have explained every negative result above — all of them were run on debug builds. The
+hypothesis was tested directly: **the signed release build is flagged too.**
+
+The conclusion, and what 1.2.1 ships with: **nothing an app can declare changes this.** The warning
+follows what the app *is* — a screenshot tool with an accessibility service enabled — which a
+side-loaded app cannot argue with, and which an app cannot rewrite its way out of. The durable
+options are the two the app already offers: **Legacy** (no accessibility service, no warning, one
+consent dialog per capture) while using banking and UPI apps, **Native** when the capture itself
+matters more than the warning.
 
 Operationally the answer stays: **the warning keys on enabled services**, so Banking mode clears
 it in one tap. **Diagnostics: what scanners see** now prints, per enabled service, its component
@@ -379,14 +399,14 @@ anyway. Two consequences:
    Bitwarden and Twilight are all enabled on the reference device and none is flagged — none of
    them is a screenshot tool.
 
-### Capture methods (1.2.0)
+### Capture methods (1.2.0, table revised in 1.2.1)
 
-So 1.2.0 stops hunting for a setting that clears the warning and gives the user the choice
-instead. The main screen has a **Capture method** card:
+1.2.0 stopped hunting for a setting that clears the warning and gave the user the choice instead.
+The main screen has a **Capture method** card:
 
 | Method | How it captures | Cost |
 | --- | --- | --- |
-| **Native — accessibility** (default) | `ScreenshotAccessibilityService`: API 30+ `takeScreenshot()`, in-app bitmap, all three modes | needs an enabled accessibility service, and banks/UPI apps warn about it |
+| **Native — accessibility** (default) | `ScreenshotAccessibilityService` + `GLOBAL_ACTION_TAKE_SCREENSHOT` — the system takes and saves the full-screen shot. Region and paint go through MediaProjection | needs an enabled accessibility service, and banks/UPI apps warn about it |
 | **Legacy — screen recording** | `CaptureActivity` + MediaProjection, the way any screen recorder works | Android asks for consent before **every** capture |
 
 Choosing Legacy also disables SnapTile's accessibility service, because a legacy method that
@@ -397,24 +417,36 @@ When a capture is requested with the native method selected but nothing enabled,
 the **setup screen** rather than silently switching methods: it would be answering a different
 question than the one asked, particularly from the Quick Settings tile.
 
-`canTakeScreenshot="true"` came back in 1.2.0 because the matrix tested it in both directions
-(1.1.11/1.1.12 declared it and were flagged; 1.1.13–1.1.16 withheld it and were flagged
-identically), so it is free — and with it, `takeScreenshot()` returns the bitmap in-app, which is
-what makes region and paint modes work without a consent dialog.
+The capability question was closed in 1.2.1 rather than 1.2.0. `canTakeScreenshot="true"` came back
+in 1.2.0 on the grounds that the matrix had tested it in both directions and found it free; 1.2.1
+drops it anyway, along with every other optional attribute, because "free" was still one declared
+capability more than the reference app needs and one more than SnapTile uses. The consequences are
+deliberate and visible: full-screen captures are taken and saved by the system (no consent, no
+bitmap in the app), and region/paint captures need MediaProjection's consent dialog.
 
 ### The setup screen
 
-`AccessibilitySetupActivity` explains the one step Android hides from side-loaded apps: on Android
-13+, the SnapTile switch in Accessibility settings stays greyed out until the user opens SnapTile's
-App info page, taps ⋮, and chooses **Allow restricted settings**. The screen has both system
-buttons (App info, Accessibility settings) and a drawn schematic of the two taps — drawn, not
-screenshotted, so it cannot go stale across Android versions and OEM skins. Reached from the main
-screen, and automatically when the native method is chosen but the service is off.
+`AccessibilitySetupActivity` explains the step Android hides from side-loaded apps, in the order
+Android actually enforces it. The order is the whole point, and getting it wrong leaves the user
+stuck: **"Allow restricted settings" only appears in the App info overflow menu after the user has
+tried to enable the service once and been refused.** So:
 
-Still unanswered, and both still readable in the Diagnostics screen: whether the scanner reads what
-the app *says* about itself (the 1.1.15 twin service, "SnapTile tile action", neutral class name and
-wording — enable exactly one of the two SnapTile entries and compare), and whether "unknown app +
-enabled accessibility service" is enough on its own (the `a11yprobe` apps).
+1. **Accessibility settings** → tap SnapTile. The switch is greyed out and Android says a restricted
+   setting is blocking it. That refusal is what unlocks step 2.
+2. **App info** → ⋮ → **Allow restricted settings**.
+3. **Accessibility settings** again → tap SnapTile and turn the switch on. It stays on.
+
+The two buttons are numbered to match (1 opens Accessibility settings, 2 opens App info), and the
+drawn schematic illustrates step 2 — drawn, not screenshotted, so it cannot go stale across Android
+versions and OEM skins. Reached from the main screen, and automatically when the native method is
+chosen but the service is off.
+
+**Both open questions closed in 1.2.1, so the twin and the probe are no longer needed.** Whether the
+scanner reads what the app says about itself: no — the twin service (1.1.15–1.2.0) was flagged
+identically and has been deleted. Whether "unknown app + enabled accessibility service" is enough on
+its own: yes, in effect — the release build is flagged and it has nothing left to strip. The
+`a11yprobe` module stays in the tree as a standalone diagnostic app; it is not part of the SnapTile
+build.
 
 ---
 
