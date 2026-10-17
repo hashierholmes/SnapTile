@@ -23,7 +23,24 @@
      Consequence of withholding the capability: takeScreenshot() cannot succeed,
      so capture is routed to the MediaProjection path and all three modes still
      work, at the cost of one consent dialog per capture. See
-     ScreenshotAccessibilityService.hasScreenshotCapability(). -->
+     ScreenshotAccessibilityService.hasScreenshotCapability().
+
+     1.1.16 sets isAccessibilityTool="true". This declaration is NOT TRUE.
+     SnapTile is a screenshot tool anyone can use, not a service that exists to
+     assist users with disabilities, and the flag states the latter. It is here
+     because the owner asked to test it on their own device, with the expected
+     result written down first: the device evidence already refutes it. Bitwarden,
+     Key Mapper and Shizuku-Next are all enabled with isAccessibilityTool false
+     and are not flagged, while Lock Screen carries the flag (true) and is not
+     flagged either, so the flag separates nothing in either direction. If the
+     warning does not clear, remove this line rather than keeping a false
+     declaration for nothing.
+
+     What the flag genuinely does, per Google's developer guidance, is make the
+     app eligible for the Accessibility-API exemption and, declared falsely,
+     surface a Play Protect warning naming the app. The twin service in
+     accessibility_service_config_twin.xml deliberately does NOT set it, so the
+     two entries stay an A/B on name and wording. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:accessibilityFlags="flagDefault"
@@ -32,5 +49,6 @@
     android:canRequestFilterKeyEvents="false"
     android:canPerformGestures="false"
     android:canTakeScreenshot="false"
+    android:isAccessibilityTool="true"
     android:description="@string/accessibility_desc"
     android:summary="@string/accessibility_desc" />

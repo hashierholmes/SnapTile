@@ -115,7 +115,17 @@ public class DiagnosticsActivity extends Activity {
         sb.append(" 2. is \"unknown app + enabled accessibility\n");
         sb.append("    service\" enough on its own? Enable an\n");
         sb.append("    a11yprobe app instead and see whether the\n");
-        sb.append("    warning names it too.\n\n");
+        sb.append("    warning names it too.\n");
+        sb.append(" 3. 1.1.16 also sets isAccessibilityTool = TRUE\n");
+        sb.append("    on the plain SnapTile service. That is a\n");
+        sb.append("    claim the app does not meet, and the device\n");
+        sb.append("    data already says it cannot be the trigger:\n");
+        sb.append("    Bitwarden, Key Mapper and Shizuku-Next are\n");
+        sb.append("    all enabled with a11yTool false and are not\n");
+        sb.append("    flagged. It is here because the owner asked\n");
+        sb.append("    to see it tested. The \"a11yTool\" line below\n");
+        sb.append("    is that flag; the twin is the control and\n");
+        sb.append("    does not set it.\n\n");
         sb.append("this app  : ").append(getPackageName()).append('\n');
         sb.append("version   : ").append(versionName()).append('\n');
         sb.append("installer : ").append(installerOf(pm, getPackageName())).append('\n');

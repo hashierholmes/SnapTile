@@ -11,7 +11,11 @@
      name and/or its description string - rather than on anything it declares or
      is capable of. Enabling this service instead of the original tests that
      inside one app, with the package, label, permissions, installer and install
-     dates all held constant. -->
+     dates all held constant.
+
+     Note (1.1.16): deliberately does NOT set isAccessibilityTool, unlike the main
+     config. The two entries are meant to differ only in name and wording, so the
+     flag is held out of the twin as a control. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:accessibilityFlags="flagDefault"

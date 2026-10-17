@@ -338,6 +338,24 @@ overlay, its install and update dates, **every activity and service class it dec
 **its full permission list** — so SnapTile's app-level surface can be diffed line by line
 against the enabled apps that are not flagged.
 
+### `isAccessibilityTool="true"` — set deliberately, declared false (1.1.16)
+
+At the owner's request, `app/src/main/res/xml/accessibility_service_config.xml` sets
+`android:isAccessibilityTool="true"`. **The declaration is not true.** SnapTile is a screenshot
+tool anyone can use; the flag states that the service exists to assist users with disabilities,
+which is also what Google's own guidance says it is for, and Play Protect guidance says the
+warning about a false declaration appears *only* for apps that set it without being an
+accessibility tool. It is in the tree because the owner wants the question tested on their own
+device, with the expected result written down first: **the device evidence says it cannot be the
+trigger.** Bitwarden, Key Mapper and Shizuku-Next are all enabled with `a11yTool false` and are
+not flagged; Lock Screen carries `a11yTool true` and is not flagged either, so the flag separates
+nothing in either direction. Compile-time trap worth knowing: **the attribute only exists in the
+`-v22` resource variant.** aapt2 strips attributes newer than `minSdk` (21) out of the base
+`res/xml/` file and writes them into `res/xml-v22/`, so dumping the base variant shows seven
+attributes and looks like the flag was dropped. Read `res/xml-v22/accessibility_service_config.xml`
+(or the `v22` file in an optimised release APK) to see what the device actually gets. If the
+warning does not clear, this line comes back out.
+
 ---
 
 ## Build
