@@ -27,6 +27,13 @@ public class ScreenshotTileService extends TileService {
     public void onClick() {
         Intent i = new Intent(this, ScreenshotChooserActivity.class);
         i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        startActivityAndCollapse(i);
+        if (android.os.Build.VERSION.SDK_INT >= 34) {
+            android.app.PendingIntent pi = android.app.PendingIntent.getActivity(
+                    this, 0, i,
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE);
+            startActivityAndCollapse(pi);
+        } else {
+            startActivityAndCollapse(i);
+        }
     }
 }
