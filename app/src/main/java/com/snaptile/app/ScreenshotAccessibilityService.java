@@ -15,29 +15,30 @@ import android.widget.Toast;
 import androidx.annotation.RequiresApi;
 
 /**
- * Clean screenshot path — PowerMenu-style.
+ * Native capture path — prompt-free screenshots through the accessibility API.
  *
- * Instead of MediaProjection (screen-record consent dialog + recording dot +
- * foreground service + VirtualDisplay), this service uses the platform
- * accessibility screenshot APIs:
+ * MediaProjection needs a consent dialog and a foreground service; this does not:
  *
  *  - API 30+ : takeScreenshot(displayId, executor, callback) returns a Bitmap
- *              directly to the app. All 3 SnapTile modes keep working.
- *              This needs CAPABILITY_CAN_TAKE_SCREENSHOT, which the XML grants
- *              as of 1.1.12 and withholds in 1.1.13. The 1.1.9 probe tested the
- *              same thing and appeared to exonerate the capability, but that
- *              build still declared accessibilityEventTypes="typeWindowsChanged",
- *              so its result could not be attributed. It is the last declared
- *              value the flagged service has that no enabled, unflagged service
- *              on the test device has (Key Mapper: window content + key
- *              filtering + gestures; Shizuku-Next: window content). A build
- *              without the capability detects it at request time and routes to
- *              the MediaProjection path — all three modes still work, one
- *              consent dialog per capture.
- *  - API 28-29 : performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT) triggers
- *              the system screenshot UI. System owns save/share.
- *  - API <28 : no accessibility screenshot API — falls back to CaptureActivity
- *              (MediaProjection).
+ *              directly to the app, so all three SnapTile modes work. It needs
+ *              CAPABILITY_CAN_TAKE_SCREENSHOT, which the config declares as of
+ *              1.2.0 and withheld in 1.1.13-1.1.16. Declaring it costs nothing:
+ *              the flagging question was tested in both directions (1.1.11/1.1.12
+ *              declared it and were flagged; 1.1.13 withheld it and was flagged
+ *              identically), so the capability is not what a bank or UPI scanner
+ *              reads. Without it the service detects that at request time and
+ *              routes full-screen captures to the system screenshot action, and
+ *              region/paint captures to the legacy path.
+ *  - API 28-29 : performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT) triggers the
+ *              system screenshot UI. System owns save/share, so only full-screen
+ *              mode can use it.
+ *  - API <28 : no accessibility screenshot API — MediaProjection (CaptureActivity).
+ *
+ * Whether this path runs at all is the user's choice in {@link CapturePrefs}: with
+ * the legacy method selected, capture never reaches this service. When it does
+ * run, an enabled accessibility service is what bank and UPI apps warn about, and
+ * that warning is a property of the category rather than of this config — the
+ * otherwise-minimal ScreenshotTile app is flagged the same way.
  *
  * Tile / chooser never call the platform APIs directly; only the bound
  * AccessibilityService instance can. They go through requestScreenshot().
@@ -62,11 +63,15 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
     /**
      * Banking mode — turn SnapTile's own service off so bank/UPI apps stop warning.
      *
-     * Banking and UPI security SDKs flag *any* enabled third-party accessibility
-     * service (they cannot tell a legitimate tool from malware), so the only fix
-     * is for the service to not be enabled while the user pays. disableSelf() is
-     * the one route an app is allowed to take; re-enabling always requires the
-     * user, which is by design in Android's security model.
+     * Bank and UPI security SDKs warn about enabled third-party accessibility
+     * services. Not every one of them: Key Mapper, Shizuku, Bitwarden and Twilight
+     * are all enabled on the reference device and none of them is flagged. What is
+     * flagged is screenshot apps — SnapTile in every configuration it has ever
+     * shipped, and ScreenshotTile, whose accessibility config is even emptier. So
+     * the one reliable fix while paying is for SnapTile's service not to be
+     * enabled at all. disableSelf() is the one route an app is allowed to take;
+     * re-enabling always requires the user, which is by design in Android's
+     * security model.
      *
      * @return true if the service disabled itself; false when it was not bound or
      *         the platform is too old (API < 24), in which case the caller must
@@ -98,17 +103,14 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
      *
      * The *capabilities* (read window content, filter key events, inject gestures)
      * are not settable through the public API — they come from
-     * res/xml/accessibility_service_config.xml, which in 1.1.13 declares nothing at
-     * all. These three fields are settable, so pin them here to
+     * res/xml/accessibility_service_config.xml, which declares nothing but the
+     * screenshot capability. These three fields are settable, so pin them here to
      * keep the live AccessibilityServiceInfo identical to the XML on every OEM
-     * (banking/UPI risk SDKs read the live info, not just the declared XML).
-     * eventTypes is pinned to 0 for the same reason the XML omits it: the service
-     * consumes no events (see onAccessibilityEvent), so requesting none is honest.
-     * It has to be pinned here too — leaving the old TYPE_WINDOWS_CHANGED value
-     * would re-impose it at runtime on top of the XML, and the live info is what
-     * a risk SDK actually reads. Dropping it is the last declarative test left
-     * against the bank/UPI warning; if it does not clear it, provenance is the
-     * only explanation remaining.
+     * (risk SDKs read the live info, not just the declared XML).
+     * eventTypes is pinned to 0 because the service consumes no events (see
+     * onAccessibilityEvent), so requesting none is honest. It also has to be pinned
+     * here: leaving a declared value in place would re-impose it at runtime on top
+     * of the XML, and the live info is what a scanner reads.
      */
     private void enforceMinimalCapabilities() {
         try {
@@ -149,17 +151,22 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (hasScreenshotCapability()) {
                 takeScreenshotCompat();
-            } else {
-                // The config does not declare canTakeScreenshot, so
-                // takeScreenshot() can never succeed. A global action does not
-                // need the capability, so let the system take the shot and own
-                // the result — same route as API 28-29. Region/Paint modes
-                // cannot receive that bitmap; they fall through to
-                // startLegacyCapture() where the MediaProjection path exists.
+            } else if (ScreenshotChooserActivity.MODE_FULL.equals(sPendingMode)) {
+                // No capability in this build's config (or an OEM withheld it).
+                // A global action needs no capability, so let the system take the
+                // shot and own the result — same route as API 28-29. Region and
+                // paint modes need the bitmap in-app, so they go to MediaProjection
+                // instead of silently degrading to a system screenshot.
                 systemScreenshot();
+            } else {
+                startLegacyCapture();
             }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            systemScreenshot();
+            if (ScreenshotChooserActivity.MODE_FULL.equals(sPendingMode)) {
+                systemScreenshot();
+            } else {
+                startLegacyCapture();
+            }
         } else {
             startLegacyCapture();
         }
@@ -177,7 +184,7 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
     private void systemScreenshot() {
         boolean ok = performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT);
         toast(ok
-                ? "System screenshot saved (SnapTile has no screenshot capability in this build)"
+                ? "System screenshot taken — this device has no in-app screenshot capability"
                 : "Screenshot failed");
     }
 
@@ -258,10 +265,10 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
 
     private void startLegacyCapture() {
         if (!projectionPathDeclared()) {
-            // 1.1.14 removes the mediaProjection declaration on purpose, so the
-            // MediaProjection route is dead here and must not be entered: it
-            // would start an undeclared service and hang waiting for it.
-            toast("No capture path in this build — turn SnapTile's accessibility service on");
+            // Only reachable on a build without the MediaProjection declaration;
+            // 1.2.0 has it back, so this exists to fail loudly rather than hang
+            // waiting for a foreground service that can never start.
+            toast("SnapTile cannot capture on this build — reinstall it");
             return;
         }
         Intent i = new Intent(this, CaptureActivity.class);
@@ -275,10 +282,10 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
      * mediaProjection foreground-service type and permission that go with it).
      *
      * Asking the PackageManager rather than asserting a build-time constant keeps
-     * one source of truth: the manifest. A build without the declaration — like
-     * 1.1.14, which removes it to test whether the capture declaration is what
-     * bank/UPI scanners key on — reports false and capture is refused instead of
-     * failing halfway through a consent flow.
+     * one source of truth: the manifest. 1.1.14 removed the declaration to test
+     * whether it was what bank/UPI scanners key on, and that test came back
+     * negative, so 1.2.0 declares it again — the legacy capture method and the
+     * pre-API-28 fallback both need it.
      */
     private boolean projectionPathDeclared() {
         try {

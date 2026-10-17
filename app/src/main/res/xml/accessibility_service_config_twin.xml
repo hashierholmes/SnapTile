@@ -13,9 +13,11 @@
      inside one app, with the package, label, permissions, installer and install
      dates all held constant.
 
-     Note (1.1.16): deliberately does NOT set isAccessibilityTool, unlike the main
-     config. The two entries are meant to differ only in name and wording, so the
-     flag is held out of the twin as a control. -->
+     The only difference between this file and accessibility_service_config.xml
+     must stay the description string: no capability, no flag, nothing else. The
+     main config declares canTakeScreenshot="true" since 1.2.0, so this one does
+     too, or the two entries would differ in two ways at once and the test would
+     no longer isolate naming. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:accessibilityFlags="flagDefault"
@@ -23,6 +25,6 @@
     android:canRequestTouchExplorationMode="false"
     android:canRequestFilterKeyEvents="false"
     android:canPerformGestures="false"
-    android:canTakeScreenshot="false"
+    android:canTakeScreenshot="true"
     android:description="@string/accessibility_desc_neutral"
     android:summary="@string/accessibility_desc_neutral" />

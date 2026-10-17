@@ -338,23 +338,83 @@ overlay, its install and update dates, **every activity and service class it dec
 **its full permission list** — so SnapTile's app-level surface can be diffed line by line
 against the enabled apps that are not flagged.
 
-### `isAccessibilityTool="true"` — set deliberately, declared false (1.1.16)
+### `isAccessibilityTool="true"` — tested, answered, removed (1.1.16)
 
-At the owner's request, `app/src/main/res/xml/accessibility_service_config.xml` sets
-`android:isAccessibilityTool="true"`. **The declaration is not true.** SnapTile is a screenshot
-tool anyone can use; the flag states that the service exists to assist users with disabilities,
-which is also what Google's own guidance says it is for, and Play Protect guidance says the
-warning about a false declaration appears *only* for apps that set it without being an
-accessibility tool. It is in the tree because the owner wants the question tested on their own
-device, with the expected result written down first: **the device evidence says it cannot be the
-trigger.** Bitwarden, Key Mapper and Shizuku-Next are all enabled with `a11yTool false` and are
-not flagged; Lock Screen carries `a11yTool true` and is not flagged either, so the flag separates
-nothing in either direction. Compile-time trap worth knowing: **the attribute only exists in the
+1.1.16 set `android:isAccessibilityTool="true"` at the owner's request, against the expectation
+written down beforehand that it would change nothing. **It changed nothing**, so the line is gone
+in 1.2.0. It was also false: the flag asserts that the service exists to assist users with
+disabilities, which is not what SnapTile is, and Google's guidance says *falsely* declaring it is
+what triggers a Play Protect warning naming the app. A claim that is both untrue and ineffective
+does not belong in the tree.
+
+Compile-time trap worth knowing, because it cost an hour: **the newer attributes only exist in the
 `-v22` resource variant.** aapt2 strips attributes newer than `minSdk` (21) out of the base
 `res/xml/` file and writes them into `res/xml-v22/`, so dumping the base variant shows seven
-attributes and looks like the flag was dropped. Read `res/xml-v22/accessibility_service_config.xml`
-(or the `v22` file in an optimised release APK) to see what the device actually gets. If the
-warning does not clear, this line comes back out.
+attributes and looks exactly like the capability and flags were silently dropped. Read
+`res/xml-v22/accessibility_service_config.xml` (or the `v22` file in an optimised release APK) to
+see what the device actually gets.
+
+### The external check: ScreenshotTile is flagged too
+
+[cvzi/ScreenshotTile](https://github.com/cvzi/ScreenshotTile) — a mature, widely used screenshot
+tile app — is flagged by Super Money exactly as SnapTile is. Its accessibility config declares:
+
+```xml
+<accessibility-service
+    android:accessibilityEventTypes="typeWindowStateChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:description="@string/accessibility_service_description" />
+```
+
+That is *less* than any SnapTile build has ever shipped: one event type, a description, no
+capability, no screenshot permission, no MediaProjection-flavoured declaration. It is flagged
+anyway. Two consequences:
+
+1. **The trigger is not a field in the accessibility config.** SnapTile's matrix already said so
+   (capability, event types, feedback, flags, `isAccessibilityTool`, the mediaProjection
+   declaration, install provenance and dates were each tested and each changed nothing); an
+   independent app with an emptier config confirms it from outside.
+2. **It is a property of the category, not of SnapTile.** An app that presents itself as a
+   screenshot tool and has an accessibility service enabled gets flagged. Key Mapper, Shizuku,
+   Bitwarden and Twilight are all enabled on the reference device and none is flagged — none of
+   them is a screenshot tool.
+
+### Capture methods (1.2.0)
+
+So 1.2.0 stops hunting for a setting that clears the warning and gives the user the choice
+instead. The main screen has a **Capture method** card:
+
+| Method | How it captures | Cost |
+| --- | --- | --- |
+| **Native — accessibility** (default) | `ScreenshotAccessibilityService`: API 30+ `takeScreenshot()`, in-app bitmap, all three modes | needs an enabled accessibility service, and banks/UPI apps warn about it |
+| **Legacy — screen recording** | `CaptureActivity` + MediaProjection, the way any screen recorder works | Android asks for consent before **every** capture |
+
+Choosing Legacy also disables SnapTile's accessibility service, because a legacy method that
+leaves the service enabled pays the warning for nothing. Choosing Native never tries to enable
+anything — Android requires the user for that, so the card offers a setup button instead.
+
+When a capture is requested with the native method selected but nothing enabled, SnapTile opens
+the **setup screen** rather than silently switching methods: it would be answering a different
+question than the one asked, particularly from the Quick Settings tile.
+
+`canTakeScreenshot="true"` came back in 1.2.0 because the matrix tested it in both directions
+(1.1.11/1.1.12 declared it and were flagged; 1.1.13–1.1.16 withheld it and were flagged
+identically), so it is free — and with it, `takeScreenshot()` returns the bitmap in-app, which is
+what makes region and paint modes work without a consent dialog.
+
+### The setup screen
+
+`AccessibilitySetupActivity` explains the one step Android hides from side-loaded apps: on Android
+13+, the SnapTile switch in Accessibility settings stays greyed out until the user opens SnapTile's
+App info page, taps ⋮, and chooses **Allow restricted settings**. The screen has both system
+buttons (App info, Accessibility settings) and a drawn schematic of the two taps — drawn, not
+screenshotted, so it cannot go stale across Android versions and OEM skins. Reached from the main
+screen, and automatically when the native method is chosen but the service is off.
+
+Still unanswered, and both still readable in the Diagnostics screen: whether the scanner reads what
+the app *says* about itself (the 1.1.15 twin service, "SnapTile tile action", neutral class name and
+wording — enable exactly one of the two SnapTile entries and compare), and whether "unknown app +
+enabled accessibility service" is enough on its own (the `a11yprobe` apps).
 
 ---
 

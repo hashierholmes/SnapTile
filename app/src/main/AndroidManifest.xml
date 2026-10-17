@@ -7,37 +7,26 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
 
-    <!-- FOREGROUND_SERVICE_MEDIA_PROJECTION and the mediaProjection
-         foregroundServiceType are deliberately absent since 1.1.14, and 1.1.14
-         settled the question they were there to answer: removing them changed
-         nothing. SnapTile with no screen-capture permission, no
-         foregroundServiceType, no capability and no event types is still flagged,
-         and every enabled app that is not flagged now matches or out-declares it
-         field for field. Whatever the rule reads, it is not in the manifest.
-         The remaining question is what the app says about itself (1.1.15 twin
-         service) and whether an unknown app carrying any accessibility service
-         is enough on its own (the a11yprobe apps).
+    <!-- MediaProjection is back as of 1.2.0, because the app now offers both
+         capture methods and the legacy one is the whole point of having a
+         warning-free mode: it captures without any accessibility service
+         enabled, which is what bank and UPI apps object to.
 
-         They are the last app-level declaration that says "this app can capture
-         the screen itself", and Super Money continues to flag SnapTile after
-         1.1.13 reduced the accessibility service to declaring nothing at all
-         (capabilities 0x0, event types 0x0) while leaving MediaProjection in
-         place. The rule cannot be reading the AccessibilityServiceInfo: every
-         field of SnapTile's live info is now a subset of an unflagged service's
-         (Twilight: CAN_TAKE_SCREENSHOT + events 0x0, enabled and not flagged;
-         Key Mapper: sideloaded and enabled with gestures, key filtering and
-         window content, not flagged).
+         It was removed for 1.1.14 as a test — "does removing the app-level
+         screen-capture declaration clear the warning?" — and that test came back
+         negative. SnapTile with no mediaProjection permission, no
+         foregroundServiceType and no capture capability was flagged exactly as
+         before, so the declaration is not what scanners read.
 
-         So this build drops the screen-capture declaration too, which leaves
-         capture to performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT) - a
-         global action needs no capability and no permission. If the warning
-         clears, the trigger is the capture declaration; if it survives, the
-         cause is app identity (name, installer, first-install/update dates) and
-         no configuration can fix it.
-
-         Revert is one commit: this note, plus ProjectionService's declaration
-         below, plus that one permission line. -->
-
+         What the evidence now points at is the accessibility service itself
+         being present at all, with the app saying it takes screenshots: the
+         widely used ScreenshotTile app (github.com/cvzi/ScreenshotTile) is
+         flagged too, and its service declares even less than SnapTile's does —
+         one event type and a description, no capability at all. That is a
+         property of the category, not of any one manifest entry, which is why
+         1.2.0 stops looking for a setting that clears it and lets the user pick
+         a method instead. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <!-- Diagnostics enumerates accessibility services to compare install sources.
          Without this, package visibility (targetSdk 34) restricts that list to
          system packages plus SnapTile itself, which is exactly the comparison we
@@ -114,18 +103,24 @@
             android:exported="false"
             android:label="@string/diagnostics_title" />
 
-        <!-- ProjectionService is NOT declared in 1.1.14: its declaration
-             (android:foregroundServiceType="mediaProjection") plus the
-             FOREGROUND_SERVICE_MEDIA_PROJECTION permission are the app-level
-             "this app can capture the screen" signal this build tests by
-             removing. The class is left in the tree so the revert is a manifest
-             edit; ScreenshotAccessibilityService checks the declaration before
-             routing anything to it. -->
+        <activity
+            android:name=".AccessibilitySetupActivity"
+            android:exported="false"
+            android:label="@string/setup_title" />
 
-        <!-- Clean screenshot path (PowerMenu-style). Tile/chooser route through
-             this service: API 30+ takeScreenshot() returns a Bitmap in-app,
-             API 28+ performGlobalAction(TAKE_SCREENSHOT) uses system UI when the
-             capability is not declared. Pre-28 needs MediaProjection. -->
+        <!-- Legacy capture path. Required by Android for MediaProjection, used by
+             CaptureActivity: consent first, then this service establishes the
+             foreground context before getMediaProjection() is allowed on
+             targetSdk 34. Declared again as of 1.2.0 — see the permission note
+             above. Nothing about the accessibility method depends on it. -->
+        <service
+            android:name=".ProjectionService"
+            android:exported="false"
+            android:foregroundServiceType="mediaProjection" />
+
+        <!-- Native capture path. Tile/chooser route through this service: API 30+
+             takeScreenshot() returns a Bitmap in-app, API 28+ falls back to
+             performGlobalAction(TAKE_SCREENSHOT), pre-28 to MediaProjection. -->
         <service
             android:name=".ScreenshotAccessibilityService"
             android:exported="true"
