@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityServiceInfo;
 import android.app.Activity;
 import android.content.pm.InstallSourceInfo;
 import android.content.pm.PackageInfo;
+import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Build;
@@ -83,22 +84,38 @@ public class DiagnosticsActivity extends Activity {
         sb.append("Verified against super.money, 2026-10-17:\n");
         sb.append(" - only ENABLED services matter: disabling\n");
         sb.append("   SnapTile's service makes the warning go away\n");
-        sb.append(" - install source alone does not decide it:\n");
-        sb.append("   Key Mapper and Shizuku-Next are sideloaded,\n");
-        sb.append("   ENABLED, and not flagged (Key Mapper declares\n");
-        sb.append("   window content, key filtering and gestures)\n");
         sb.append(" - the declared accessibility info does not\n");
-        sb.append("   decide it: 1.1.13 declared no capabilities and\n");
-        sb.append("   no event types and was flagged anyway, while\n");
-        sb.append("   Twilight is ENABLED, declares\n");
-        sb.append("   CAN_TAKE_SCREENSHOT, and is not flagged.\n");
-        sb.append("   Every field of SnapTile's live info is a\n");
-        sb.append("   subset of some unflagged service's.\n\n");
-        sb.append("So the trigger is app-level. 1.1.14 removes the\n");
-        sb.append("screen-capture declaration (FOREGROUND_SERVICE_\n");
-        sb.append("MEDIA_PROJECTION + foregroundServiceType) and\n");
-        sb.append("nothing else, to test that. Compare the\n");
-        sb.append("\"declares\" and \"dates\" lines per entry.\n\n");
+        sb.append("   decide it. 1.1.11-1.1.13 walked it down to\n");
+        sb.append("   nothing (caps 0x80 -> 0x0, events -> 0x0)\n");
+        sb.append("   and the warning stayed; every live field of\n");
+        sb.append("   SnapTile's info is now a subset of an\n");
+        sb.append("   unflagged app's. Twilight is ENABLED with\n");
+        sb.append("   CAN_TAKE_SCREENSHOT and is not flagged.\n");
+        sb.append("   Lock Screen is ENABLED with byte-identical\n");
+        sb.append("   info (caps 0x0, events 0x0, feedback 0x10,\n");
+        sb.append("   flags 0x1) and is not flagged either.\n");
+        sb.append(" - the manifest does not decide it: 1.1.14\n");
+        sb.append("   removed the mediaProjection permission and\n");
+        sb.append("   the foregroundServiceType (see \"declares\"\n");
+        sb.append("   below, mediaProjection=no) and the warning\n");
+        sb.append("   stayed.\n");
+        sb.append(" - provenance and install dates do not decide\n");
+        sb.append("   it: Key Mapper (10-15) and Shizuku-Next\n");
+        sb.append("   (10-16) are side-loaded, ENABLED, installed\n");
+        sb.append("   this week, and not flagged.\n\n");
+        sb.append("Two questions are left, both readable here:\n");
+        sb.append(" 1. does the scanner read what the app says\n");
+        sb.append("    about itself? 1.1.15 adds a twin service\n");
+        sb.append("    (\"SnapTile tile action\") with the same\n");
+        sb.append("    behaviour and config but a neutral name\n");
+        sb.append("    and wording. Enable exactly ONE of the two\n");
+        sb.append("    SnapTile entries, check super.money, then\n");
+        sb.append("    swap. If the twin is clean, the fix is a\n");
+        sb.append("    rename, not a config change.\n");
+        sb.append(" 2. is \"unknown app + enabled accessibility\n");
+        sb.append("    service\" enough on its own? Enable an\n");
+        sb.append("    a11yprobe app instead and see whether the\n");
+        sb.append("    warning names it too.\n\n");
         sb.append("this app  : ").append(getPackageName()).append('\n');
         sb.append("version   : ").append(versionName()).append('\n');
         sb.append("installer : ").append(installerOf(pm, getPackageName())).append('\n');
@@ -146,6 +163,9 @@ public class DiagnosticsActivity extends Activity {
             if (!text.isEmpty()) {
                 sb.append(" text     ").append(text).append('\n');
             }
+            // The class name is the other half of what a scanner reads straight
+            // out of the accessibility list, without any package visibility.
+            sb.append(" service  ").append(shortComponent(info)).append('\n');
         }
 
         // Ground truth that package visibility cannot hide: the secure setting
@@ -179,10 +199,18 @@ public class DiagnosticsActivity extends Activity {
         sb.append("exactly this capability and is not flagged.\n\n");
         sb.append("mediaProjection=yes = the app declares that it\n");
         sb.append("may capture the screen through MediaProjection.\n");
-        sb.append("It is the last app-level declaration 1.1.14\n");
-        sb.append("removes, so this reading says whether these\n");
-        sb.append("scanners treat \"can capture the screen\" as the\n");
-        sb.append("risk, or something no config can change.\n");
+        sb.append("1.1.14 removed it and the warning stayed, so\n");
+        sb.append("this is no longer a live question; it stays in\n");
+        sb.append("the dump as a control.\n\n");
+        sb.append("service = the class name the scanner reads out\n");
+        sb.append("of the accessibility list. names = every\n");
+        sb.append("activity and service the app declares, so a\n");
+        sb.append("rule keying on names would read \"Screenshot\"\n");
+        sb.append("and \"Capture\" straight off SnapTile's list.\n");
+        sb.append("perms = requested permissions, so SnapTile's\n");
+        sb.append("set can be diffed against the apps that are\n");
+        sb.append("not flagged. source = API 34 install source:\n");
+        sb.append("STORE versus a file opened by hand.\n");
         return sb.toString();
     }
 
@@ -212,26 +240,113 @@ public class DiagnosticsActivity extends Activity {
 
     /**
      * What an app declares that a screen-capture rule could key on, plus when it
-     * was last written — the two app-level things the accessibility info cannot
+     * was last written — the app-level things the accessibility info cannot
      * explain. Falls back to a note when package visibility still hides it.
+     *
+     * 1.1.15 adds the two remaining app-level signals nothing has ruled out: the
+     * names of every component the app declares (a keyword rule would read
+     * "Screenshot"/"Capture" straight off this list) and its full permission
+     * set, so SnapTile's can be diffed against the enabled apps that are not
+     * flagged.
      */
     private String appFacts(PackageManager pm, String pkg) {
         try {
-            PackageInfo pi = pm.getPackageInfo(pkg, PackageManager.GET_PERMISSIONS);
+            PackageInfo pi = pm.getPackageInfo(pkg,
+                    PackageManager.GET_PERMISSIONS
+                            | PackageManager.GET_ACTIVITIES
+                            | PackageManager.GET_SERVICES);
             String[] req = pi.requestedPermissions;
-            String facts = "mediaProjection="
-                    + (has(req, "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION") ? "yes" : "no")
-                    + " captureVideo="
-                    + (has(req, "android.permission.CAPTURE_VIDEO_OUTPUT")
-                        || has(req, "android.permission.CAPTURE_SECURE_VIDEO_OUTPUT") ? "yes" : "no")
-                    + " overlay="
-                    + (has(req, "android.permission.SYSTEM_ALERT_WINDOW") ? "yes" : "no")
-                    + "\n   dates    installed " + date(pi.firstInstallTime)
-                    + " updated " + date(pi.lastUpdateTime);
-            return facts;
+            StringBuilder sb = new StringBuilder();
+            sb.append("mediaProjection=")
+                    .append(has(req, "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION") ? "yes" : "no")
+                    .append(" captureVideo=")
+                    .append(has(req, "android.permission.CAPTURE_VIDEO_OUTPUT")
+                            || has(req, "android.permission.CAPTURE_SECURE_VIDEO_OUTPUT") ? "yes" : "no")
+                    .append(" overlay=")
+                    .append(has(req, "android.permission.SYSTEM_ALERT_WINDOW") ? "yes" : "no");
+            sb.append("\n   source   ").append(packageSource(pm, pkg));
+            sb.append("\n   dates    installed ").append(date(pi.firstInstallTime))
+                    .append(" updated ").append(date(pi.lastUpdateTime));
+            sb.append("\n   names    ").append(componentNames(pi));
+            sb.append("\n   perms    ").append(permissionNames(req));
+            return sb.toString();
         } catch (PackageManager.NameNotFoundException e) {
             return "(package not visible, or not installed)";
         }
+    }
+
+    /**
+     * API 34 tells an app where its packages came from in a form install-source
+     * alone cannot: a store install and a downloaded APK both show a package
+     * installer, but only this distinguishes them. Kept as a named string so a
+     * dump stays readable on platforms that predate it.
+     */
+    private String packageSource(PackageManager pm, String pkg) {
+        if (Build.VERSION.SDK_INT < 34) return "(needs API 34)";
+        try {
+            InstallSourceInfo si = pm.getInstallSourceInfo(pkg);
+            switch (si.getPackageSource()) {
+                case PackageInstaller.PACKAGE_SOURCE_STORE:
+                    return "STORE";
+                case PackageInstaller.PACKAGE_SOURCE_LOCAL_FILE:
+                    return "LOCAL_FILE (opened from a file: side-loaded)";
+                case PackageInstaller.PACKAGE_SOURCE_DOWNLOADED_FILE:
+                    return "DOWNLOADED_FILE";
+                case PackageInstaller.PACKAGE_SOURCE_OTHER:
+                    return "OTHER";
+                default:
+                    return "UNSPECIFIED (" + si.getPackageSource() + ")";
+            }
+        } catch (Exception e) {
+            return "(not visible to SnapTile)";
+        }
+    }
+
+    /** Every activity and service class the app declares, sorted, short form. */
+    private static String componentNames(PackageInfo pi) {
+        List<String> names = new java.util.ArrayList<>();
+        // Component names make long lists; only the class matters for eyeballing
+        // a keyword, so the package prefix is dropped.
+        String pkg = pi.packageName;
+        if (pi.activities != null) {
+            for (android.content.pm.ActivityInfo a : pi.activities) {
+                if (a != null && a.name != null) names.add(trim(pkg, a.name));
+            }
+        }
+        if (pi.services != null) {
+            for (android.content.pm.ServiceInfo s : pi.services) {
+                if (s != null && s.name != null) names.add(trim(pkg, s.name));
+            }
+        }
+        if (names.isEmpty()) return "(none)";
+        java.util.Collections.sort(names);
+        return join(names);
+    }
+
+    /** Requested permissions, sorted, with the android.permission. prefix dropped. */
+    private static String permissionNames(String[] req) {
+        if (req == null || req.length == 0) return "(none)";
+        List<String> out = new java.util.ArrayList<>(req.length);
+        for (String p : req) {
+            if (p == null) continue;
+            out.add(p.startsWith("android.permission.")
+                    ? p.substring("android.permission.".length()) : p);
+        }
+        java.util.Collections.sort(out);
+        return join(out);
+    }
+
+    private static String trim(String pkg, String cls) {
+        return cls.startsWith(pkg + ".") ? cls.substring(pkg.length() + 1) : cls;
+    }
+
+    private static String join(List<String> parts) {
+        StringBuilder sb = new StringBuilder();
+        for (String p : parts) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(p);
+        }
+        return sb.toString();
     }
 
     private static boolean has(String[] values, String needle) {
@@ -251,6 +366,18 @@ public class DiagnosticsActivity extends Activity {
         ResolveInfo ri = info.getResolveInfo();
         if (ri == null || ri.serviceInfo == null) return "?";
         return ri.serviceInfo.applicationInfo.packageName + "/" + ri.serviceInfo.name;
+    }
+
+    /** "com.example.app/.FooService" — how the secure setting spells a component. */
+    private static String shortComponent(AccessibilityServiceInfo info) {
+        ResolveInfo ri = info.getResolveInfo();
+        if (ri == null || ri.serviceInfo == null) return "?";
+        String pkg = ri.serviceInfo.applicationInfo.packageName;
+        String cls = ri.serviceInfo.name;
+        if (cls != null && cls.startsWith(pkg + ".")) {
+            cls = "." + cls.substring(pkg.length() + 1);
+        }
+        return pkg + "/" + cls;
     }
 
     @SuppressWarnings("deprecation")

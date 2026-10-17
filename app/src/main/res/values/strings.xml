@@ -16,6 +16,11 @@
     <string name="drag_to_select">Drag to select region</string>
     <string name="capture_region">Capture</string>
     <string name="accessibility_desc">SnapTile uses an accessibility service only to take screenshots when you tap the Quick Settings tile. No other data is collected.</string>
+    <!-- Diagnostic twin (1.1.15): same service, same config, different name and
+         wording, to test whether the bank/UPI warning reads what an app says
+         about itself. Odds are this string is temporary. -->
+    <string name="accessibility_desc_neutral">SnapTile uses an accessibility service to carry out the action of its Quick Settings tile. Nothing else is read and no data is collected.</string>
+    <string name="a11y_label_twin">SnapTile tile action</string>
     <string name="enable_accessibility_title">Enable screenshot access</string>
     <string name="enable_accessibility_text">SnapTile takes screenshots cleanly via an accessibility service (no screen-recording prompt). Turn it on once under Accessibility → SnapTile.</string>
     <string name="enable_accessibility_btn">Open accessibility settings</string>

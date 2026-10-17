@@ -8,7 +8,15 @@
         android:maxSdkVersion="28" />
 
     <!-- FOREGROUND_SERVICE_MEDIA_PROJECTION and the mediaProjection
-         foregroundServiceType are deliberately absent in 1.1.14.
+         foregroundServiceType are deliberately absent since 1.1.14, and 1.1.14
+         settled the question they were there to answer: removing them changed
+         nothing. SnapTile with no screen-capture permission, no
+         foregroundServiceType, no capability and no event types is still flagged,
+         and every enabled app that is not flagged now matches or out-declares it
+         field for field. Whatever the rule reads, it is not in the manifest.
+         The remaining question is what the app says about itself (1.1.15 twin
+         service) and whether an unknown app carrying any accessibility service
+         is enough on its own (the a11yprobe apps).
 
          They are the last app-level declaration that says "this app can capture
          the screen itself", and Super Money continues to flag SnapTile after
@@ -128,6 +136,23 @@
             <meta-data
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <!-- Diagnostic twin, 1.1.15. Same service behaviour, same accessibility
+             config, different class name and description text. Enable this one
+             instead of the service above to test whether the warning reads what
+             an app says about itself; keep exactly one of the two enabled. -->
+        <service
+            android:name=".TileAssistService"
+            android:exported="true"
+            android:label="@string/a11y_label_twin"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config_twin" />
         </service>
 
     </application>

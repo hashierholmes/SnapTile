@@ -287,26 +287,56 @@ Ruled out by experiment, not by guesswork:
 | `accessibilityEventTypes` | **No** — `1.1.12` removed it from the XML *and* the runtime pin; still flagged |
 | `canTakeScreenshot` | **No, both ways** — `1.1.13` declared no capability and was flagged; Twilight is enabled *with* it and is not |
 | "declares nothing = suspicious" | **No** — same build, same result: `1.1.13` declared nothing and was flagged |
+| **the screen-capture declaration** (`FOREGROUND_SERVICE_MEDIA_PROJECTION` + `foregroundServiceType`) | **No** — `1.1.14` removed both, still flagged with `mediaProjection=no` |
+| **install/update dates** ("recently installed" rule) | **No** — every enabled service arrived 2026-10-14…17; Key Mapper and Shizuku-Next are as new and unflagged |
 | the service only matters when enabled | **Yes** — disabling it made the warning disappear |
 
-With the accessibility side exhausted, the trigger is app-level. The one thing SnapTile declares
+With the accessibility side exhausted, the trigger is app-level. The one thing SnapTile declared
 at app level that no enabled, unflagged app on the device declares is **screen capture**:
 `FOREGROUND_SERVICE_MEDIA_PROJECTION` plus `android:foregroundServiceType="mediaProjection"`.
-`1.1.14` removes exactly that, and nothing else, to test it. Capture moves to
+`1.1.14` removed exactly that, and nothing else, to test it. Capture moved to
 `performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT)`, which needs no capability and no
 permission.
 
-- **Warning clears** → scanners key on "this app can capture the screen itself". SnapTile then
-  ships without MediaProjection, and one tap keeps working via the system screenshot.
-- **Warning survives** → nothing configurable is left; the cause is app identity (name,
-  installer, install/update dates) and no build can change it. The device already shows the
-  precedent: `Key Mapper` and `Shizuku-Next` are the same kind of app done by other people.
+**Result: the warning survived.** `1.1.14` is flagged with `mediaProjection=no` on its own
+Diagnostics screen, so the manifest is exhausted too. Three further facts came out of the same
+dump:
+
+- **install/update dates do not decide it** — every enabled service on the device was installed
+  between 2026-10-14 and 2026-10-17, SnapTile included; Key Mapper (10-15) and Shizuku-Next
+  (10-16) are the same age and side-loaded, and neither is flagged.
+- **Power Menu, Lock Screen and Switchly are Play apps**, not side-loaded ones — they were
+  invisible to the earlier dump only because package visibility hid them.
+- **Lock Screen (`com.olalab.lockscreen`) publishes byte-identical accessibility info to
+  SnapTile 1.1.14** — capabilities `0x0`, event types `0x0`, `feedbackType 0x10`, `flags 0x1` —
+  and is not flagged. The only differences left are `isAccessibilityTool` (true there, false
+  here), its install source, and what the two apps say about themselves.
+
+So `1.1.15` tests the two remaining explanations, and both are readable on the Diagnostics
+screen:
+
+1. **The scanner reads what an app says about itself** — the bound class name
+   (`ScreenshotAccessibilityService`) and the description text ("...only to take screenshots...")
+   are both readable out of the accessibility list with no permission at all. 1.1.15 declares a
+   **twin service** (`TileAssistService`, "SnapTile tile action") with identical behaviour and
+   an identical config, but a neutral class name and wording. Enable exactly one of the two
+   SnapTile entries and compare. *Twin clean → the fix is a rename, not a config change.*
+2. **"Unknown app + enabled accessibility service" is enough on its own** — the `a11yprobe`
+   apps are side-loaded packages with no history. Enable one alongside SnapTile: if the warning
+   names it too, the rule is generic and no build can fix it for a side-loaded app.
+
+If both come back negative, the honest position is that nothing in the app can change this, and
+the two durable options are the ones already on the table: **Banking mode** (keep the service,
+accept the warning while it is on) or an **architecture without an accessibility service**
+(MediaProjection-only capture: no warning, one consent dialog per capture).
 
 Operationally the answer stays: **the warning keys on enabled services**, so Banking mode clears
-it in one tap. **Diagnostics: what scanners see** now prints, per enabled service, its declared
-capabilities, event types, description text, whether its app declares MediaProjection /
-video-output capture / overlay, and its install and update dates — the app-level data any
-capture-based rule would have to be reading.
+it in one tap. **Diagnostics: what scanners see** now prints, per enabled service, its component
+class name, declared capabilities, event types, description text, the app's install source
+(API 34 `PACKAGE_SOURCE_*`), whether its app declares MediaProjection / video-output capture /
+overlay, its install and update dates, **every activity and service class it declares**, and
+**its full permission list** — so SnapTile's app-level surface can be diffed line by line
+against the enabled apps that are not flagged.
 
 ---
 
