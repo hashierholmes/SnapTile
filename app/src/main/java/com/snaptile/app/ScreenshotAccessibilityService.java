@@ -92,12 +92,19 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
      * canTakeScreenshot="true". These three fields are settable, so pin them here to
      * keep the live AccessibilityServiceInfo identical to the XML on every OEM
      * (banking/UPI risk SDKs read the live info, not just the declared XML).
+     * eventTypes is pinned to 0 for the same reason the XML omits it: the service
+     * consumes no events (see onAccessibilityEvent), so requesting none is honest.
+     * It has to be pinned here too — leaving the old TYPE_WINDOWS_CHANGED value
+     * would re-impose it at runtime on top of the XML, and the live info is what
+     * a risk SDK actually reads. Dropping it is the last declarative test left
+     * against the bank/UPI warning; if it does not clear it, provenance is the
+     * only explanation remaining.
      */
     private void enforceMinimalCapabilities() {
         try {
             android.accessibilityservice.AccessibilityServiceInfo info = getServiceInfo();
             if (info == null) return;
-            info.eventTypes = android.view.accessibility.AccessibilityEvent.TYPE_WINDOWS_CHANGED;
+            info.eventTypes = 0;
             info.feedbackType = android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_GENERIC;
             info.flags = android.accessibilityservice.AccessibilityServiceInfo.DEFAULT;
             info.notificationTimeout = 0;

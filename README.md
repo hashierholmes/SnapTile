@@ -293,11 +293,13 @@ app is both sideloaded *and* the only one declaring `typeWindowsChanged`):
    service came from Play; both flagged ones were sideloaded.
 2. **`accessibilityEventTypes="typeWindowsChanged"`** — the last declared value unique to
    SnapTile. AOSP defaults an absent attribute to `0`, so Key Mapper's silence is not
-   evidence either way. If this is it, dropping the attribute is free: SnapTile's service
-   ignores every event it receives.
+   evidence either way. Dropping it costs nothing: the service ignores every event it
+   receives. `1.1.12` does exactly that, in both the XML and the runtime pin (pin the XML
+   alone and `setServiceInfo` re-imposes the old value). If the warning survives, provenance
+   is the only explanation left; if it clears, this was it.
 
-The `a11yprobe/` module isolates them: two disposable apps that differ in exactly that one
-attribute. Whichever gets flagged names the trigger.
+The `a11yprobe/` module remains as the controlled version of the same question: two
+disposable apps, one declaring nothing at all.
 
 Operationally, the answer either way is the same: **the warning keys on enabled services**,
 so Banking mode clears it in one tap — and capture still works with the service off, via

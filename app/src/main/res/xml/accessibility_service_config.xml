@@ -1,21 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Screenshot-only service. Deliberately minimal so risk/banking scanners see
-     no window-content read, no gesture injection, no text/keylogging events.
-     typeWindowsChanged is the smallest event set that keeps takeScreenshot()
-     reliable across OEMs; onAccessibilityEvent() ignores everything anyway.
+     no window-content read, no gesture injection, no text events — and, as of
+     1.1.12, no event types at all.
+
+     accessibilityEventTypes is not declared: it was the last declared value
+     unique to SnapTile among the accessibility services super.money leaves
+     alone (Bitwarden declares typeWindowStateChanged, Key Mapper declares
+     nothing), and dropping it is free — onAccessibilityEvent() ignores every
+     event it receives, and neither takeScreenshot() nor performGlobalAction()
+     depends on event delivery. AOSP confirms an absent attribute means 0, not
+     typeAllMask (AccessibilityServiceInfo XML parsing), so "declares nothing"
+     really is nothing.
+
+     If the warning survives this, no configuration can be the trigger and the
+     remaining explanation is provenance: sideloaded, never installed from a
+     trusted store. If it clears, the event type was it.
 
      canTakeScreenshot stays declared: it is what makes the prompt-free capture
-     path possible. It was tested as the suspected trigger on 2026-10-17, when
-     1.1.9-probe shipped with it set to false — super.money flagged that build
-     exactly as it flagged this one, and the warning vanished the moment the
-     service was disabled. So the capability is not what those SDKs key on, and
-     withholding it bought nothing while costing the consent-free capture.
-
-     What is still different about SnapTile versus the accessibility apps those
-     SDKs leave alone is provenance (sideloaded, never from a trusted store) and
-     the event type above. The a11yprobe/ module isolates those two. -->
+     path possible. It was withheld for a test on 2026-10-17 (1.1.9-probe) and
+     that build was flagged identically, so it is not what these SDKs key on —
+     removing it bought nothing and cost the consent-free capture. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accessibilityEventTypes="typeWindowsChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:accessibilityFlags="flagDefault"
     android:canRetrieveWindowContent="false"
