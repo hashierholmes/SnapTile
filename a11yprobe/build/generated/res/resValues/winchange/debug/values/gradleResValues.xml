@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Automatically generated file. DO NOT MODIFY -->
+
+    <!-- Value from product flavor: winchange -->
+    <string name="probe_config" translatable="false">declares accessibilityEventTypes=typeWindowsChanged</string>
+    <!-- Value from product flavor: winchange -->
+    <string name="probe_label" translatable="false">A11yProbe B winchange</string>
+
+</resources>

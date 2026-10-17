@@ -32,6 +32,14 @@ jobs:
           name: SnapTile-debug
           path: app/build/outputs/apk/debug/app-debug.apk
 
+      - name: Upload accessibility control APKs
+        # Experiment control, not SnapTile: two tiny apps that differ in one
+        # attribute so the bank/UPI trigger can be isolated. See a11yprobe/.
+        uses: actions/upload-artifact@v4
+        with:
+          name: A11yProbe
+          path: a11yprobe/build/outputs/apk/*/debug/*.apk
+
   release:
     # Signed release build: stable cert so updates install over each other.
     # Secrets hold the upload key (see keystore-info.txt, kept OFF git).

@@ -1,0 +1,7 @@
+#Sat Oct 17 15:45:35 IST 2026
+base.1=/home/ubuntu/opencode-workspace/snaptile/a11yprobe/build/intermediates/dex/minimalDebug/mergeProjectDexMinimalDebug/7/classes.dex
+path.1=7/classes.dex
+base.0=/home/ubuntu/opencode-workspace/snaptile/a11yprobe/build/intermediates/dex/minimalDebug/mergeProjectDexMinimalDebug/0/classes.dex
+renamed.1=classes2.dex
+renamed.0=classes.dex
+path.0=0/classes.dex

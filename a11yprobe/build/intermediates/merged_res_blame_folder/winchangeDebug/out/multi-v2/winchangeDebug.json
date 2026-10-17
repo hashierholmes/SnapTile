@@ -1,0 +1,43 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.snaptile.a11yprobe-merged_res-4:/values_values.arsc.flat",
+            "map": [
+                {
+                    "source": "/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/res/values/strings.xml",
+                    "from": {
+                        "startLines": "2,3",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,393",
+                        "endColumns": "337,66",
+                        "endOffsets": "388,455"
+                    },
+                    "to": {
+                        "startLines": "3,5",
+                        "startColumns": "4,4",
+                        "startOffsets": "169,590",
+                        "endColumns": "337,66",
+                        "endOffsets": "502,652"
+                    }
+                },
+                {
+                    "source": "/home/ubuntu/opencode-workspace/snaptile/a11yprobe/build/generated/res/resValues/winchange/debug/values/gradleResValues.xml",
+                    "from": {
+                        "startLines": "6,8",
+                        "startColumns": "4,4",
+                        "startOffsets": "164,328",
+                        "endColumns": "113,82",
+                        "endOffsets": "273,406"
+                    },
+                    "to": {
+                        "startLines": "2,4",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,507",
+                        "endColumns": "113,82",
+                        "endOffsets": "164,585"
+                    }
+                }
+            ]
+        }
+    ]
+}

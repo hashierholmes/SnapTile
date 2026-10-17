@@ -259,8 +259,8 @@ instead.
 
 ### What we know so far (2026-10-17)
 
-The warning is **not** the obvious capability check, and the first two theories were
-disproved by looking at what the *unflagged* apps on the same device actually declare:
+The warning is **not** about what SnapTile declares, and that is now tested rather than
+inferred. What the *unflagged* apps on the same device declare:
 
 | | SnapTile (flagged) | Key Mapper (on, not flagged) | Bitwarden (on, not flagged) |
 |---|---|---|---|
@@ -273,22 +273,37 @@ disproved by looking at what the *unflagged* apps on the same device actually de
 
 Key Mapper declares window content, gesture injection *and* key-event filtering — the
 textbook malicious combination — and is left alone. Bitwarden even declares
-`isAccessibilityTool="false"` and is left alone. Two explanations survive:
+`isAccessibilityTool="false"` and is left alone.
 
-1. **`canTakeScreenshot`** — the one capability SnapTile declared that none of the
-   unflagged services do. Screen capture is exactly what OTP-stealing trojans want
-   (MITRE T1513), so a risk SDK may key on it.
-2. **Install source** — risk-SDK pipelines (e.g. Talsec's) give apps from a trusted store a
-   badge that *skips* the deep scan, and inspect sideloaded apps only. Every unflagged
-   service on the test device came from Play; both flagged ones (SnapTile, SnapTile Debug)
-   were sideloaded.
+Ruled out by experiment or by AOSP source, not by guesswork:
 
-`1.1.9-probe` removes variable 1 only — `canTakeScreenshot="false"` — with the service
-detecting the missing capability at request time and routing to the MediaProjection path,
-so all three modes still work (one consent dialog per capture). **Diagnostics: what
-scanners see** on the app's first card dumps the install source, capabilities, event types
-and enabled state of every accessibility service on the device — the same data the SDK
-reads.
+| Theory | Result |
+|---|---|
+| "any enabled third-party service is flagged" | **No** — Bitwarden/Key Mapper are enabled and unflagged |
+| `typeAllMask`/keylogging event-set heuristic | **No** — Key Mapper declares no event types and is unflagged |
+| `isAccessibilityTool="false"` is treated as suspicious | **No** — Bitwarden declares exactly that and is unflagged |
+| `canTakeScreenshot="true"` is the trigger | **No** — 1.1.9-probe shipped with it `false`; super.money flagged that build identically (the dialog named "SnapTile Debug", the probe build) |
+| the service only matters when enabled | **Yes** — disabling it made the warning disappear |
+
+Two candidates remain, and they are perfectly confounded in the data above (every flagged
+app is both sideloaded *and* the only one declaring `typeWindowsChanged`):
+
+1. **Provenance** — risk-SDK pipelines (e.g. Talsec's) give apps from a trusted store a
+   badge that *skips* the deep scan and inspect sideloaded apps only. Every unflagged
+   service came from Play; both flagged ones were sideloaded.
+2. **`accessibilityEventTypes="typeWindowsChanged"`** — the last declared value unique to
+   SnapTile. AOSP defaults an absent attribute to `0`, so Key Mapper's silence is not
+   evidence either way. If this is it, dropping the attribute is free: SnapTile's service
+   ignores every event it receives.
+
+The `a11yprobe/` module isolates them: two disposable apps that differ in exactly that one
+attribute. Whichever gets flagged names the trigger.
+
+Operationally, the answer either way is the same: **the warning keys on enabled services**,
+so Banking mode clears it in one tap — and capture still works with the service off, via
+the tile's one-time MediaProjection consent. **Diagnostics: what scanners see** on the
+app's first card dumps the install source, capabilities, event types and enabled state of
+every accessibility service on the device — the same data the SDK reads.
 
 ---
 

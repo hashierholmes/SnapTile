@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="probe_config" translatable="false">declares accessibilityEventTypes=typeWindowsChanged</string>
+    <string name="probe_hint">Control app for the SnapTile investigation.\n\nThis variant %1$s.\n\nEnable it under Accessibility (allow restricted settings first if Android blocks it), then open super.money and note whether the warning lists this app. The service itself does nothing — the declared configuration is the payload.</string>
+    <string name="probe_label" translatable="false">A11yProbe B winchange</string>
+    <string name="probe_open">Open Accessibility settings</string>
+</resources>

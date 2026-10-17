@@ -4,20 +4,16 @@
      typeWindowsChanged is the smallest event set that keeps takeScreenshot()
      reliable across OEMs; onAccessibilityEvent() ignores everything anyway.
 
-     1.1.9-probe: canTakeScreenshot is switched OFF on purpose.
+     canTakeScreenshot stays declared: it is what makes the prompt-free capture
+     path possible. It was tested as the suspected trigger on 2026-10-17, when
+     1.1.9-probe shipped with it set to false — super.money flagged that build
+     exactly as it flagged this one, and the warning vanished the moment the
+     service was disabled. So the capability is not what those SDKs key on, and
+     withholding it bought nothing while costing the consent-free capture.
 
-     Everything else here is already minimal, yet bank/UPI apps still warn about
-     SnapTile while leaving *other* accessibility apps alone - including ones
-     that declare far more (Key Mapper declares window content, gesture
-     injection, key-event filtering and fingerprint gestures, and is not
-     flagged). The one capability SnapTile declared that none of those apps
-     declare is canTakeScreenshot, so this build removes exactly that one
-     variable to find out whether it is the trigger.
-
-     Consequence: takeScreenshot() can no longer succeed. The service detects
-     the missing capability at request time and routes to the MediaProjection
-     path, so all three modes still work - at the cost of one consent dialog
-     per capture. See ScreenshotAccessibilityService.hasScreenshotCapability(). -->
+     What is still different about SnapTile versus the accessibility apps those
+     SDKs leave alone is provenance (sideloaded, never from a trusted store) and
+     the event type above. The a11yprobe/ module isolates those two. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeWindowsChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
@@ -26,6 +22,6 @@
     android:canRequestTouchExplorationMode="false"
     android:canRequestFilterKeyEvents="false"
     android:canPerformGestures="false"
-    android:canTakeScreenshot="false"
+    android:canTakeScreenshot="true"
     android:description="@string/accessibility_desc"
     android:summary="@string/accessibility_desc" />

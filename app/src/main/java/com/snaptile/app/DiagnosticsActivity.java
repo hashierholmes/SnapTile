@@ -26,12 +26,12 @@ import java.util.Set;
  * service config possible (no window content, no gestures, no key filtering)
  * and was still flagged, while other accessibility apps on the same device were
  * not. Those other apps came from Play and declare *more* capabilities, so the
- * discriminator is either the one capability SnapTile declared that they don't
- * (CAN_TAKE_SCREENSHOT), or the install source (risk SDKs scan sideloaded apps
- * and give trusted-store apps a badge that skips the scan).
+ * risk SDK is clearly not reading declared capabilities; removing
+ * canTakeScreenshot entirely (1.1.9-probe) changed nothing, and disabling the
+ * service removed the warning.
  *
- * This screen shows both signals per service, side by side, so the answer is
- * visible rather than guessed: compare the "installer" line of every ENABLED
+ * What is left is provenance versus the event type, so this screen shows both
+ * signals per service, side by side: read the "installer" line of every ENABLED
  * entry.
  */
 public class DiagnosticsActivity extends Activity {
@@ -78,13 +78,15 @@ public class DiagnosticsActivity extends Activity {
         StringBuilder sb = new StringBuilder();
         sb.append("What bank/UPI risk SDKs can read\n");
         sb.append("================================\n\n");
-        sb.append("Question being tested:\n");
-        sb.append(" (a) is CAN_TAKE_SCREENSHOT the trigger?\n");
-        sb.append(" (b) is the install source the trigger?\n");
-        sb.append("     (trusted store = skipped, sideloaded = scanned)\n\n");
-        sb.append("Read the 'installer' line of every ENABLED entry.\n");
-        sb.append("If the only non-Play entries are SnapTile and\n");
-        sb.append("SnapTile Debug, the source is the discriminator.\n\n");
+        sb.append("Verified against super.money, 2026-10-17:\n");
+        sb.append(" - only ENABLED services matter: disabling\n");
+        sb.append("   SnapTile's service makes the warning go away\n");
+        sb.append(" - declared capabilities do not matter: a build\n");
+        sb.append("   without canTakeScreenshot was flagged too,\n");
+        sb.append("   while Key Mapper's far broader service was not\n\n");
+        sb.append("Left to separate: provenance (sideloaded vs a\n");
+        sb.append("trusted store) and the event type. Compare the\n");
+        sb.append("installer line of every ENABLED entry below.\n\n");
         sb.append("this app  : ").append(getPackageName()).append('\n');
         sb.append("installer : ").append(installerOf(pm, getPackageName())).append('\n');
         sb.append("sdk       : ").append(Build.VERSION.SDK_INT).append('\n');
@@ -133,7 +135,7 @@ public class DiagnosticsActivity extends Activity {
         sb.append("CAN_TAKE_SCREENSHOT = this service may capture\n");
         sb.append("the screen itself (not just trigger the system\n");
         sb.append("screenshot), which is what OTP-stealing trojans\n");
-        sb.append("want. 1.1.9-probe no longer declares it.\n");
+        sb.append("want. Tested 2026-10-17: not the trigger here.\n");
         return sb.toString();
     }
 

@@ -21,9 +21,9 @@ import androidx.annotation.RequiresApi;
  *
  *  - API 30+ : takeScreenshot(displayId, executor, callback) returns a Bitmap
  *              directly to the app. All 3 SnapTile modes keep working.
- *              This needs CAPABILITY_CAN_TAKE_SCREENSHOT, which the XML grants;
- *              1.1.9-probe withholds it on purpose (see the XML comment) and the
- *              service then routes to the MediaProjection path instead.
+ *              This needs CAPABILITY_CAN_TAKE_SCREENSHOT, which the XML grants.
+ *              A build that withholds it (tested 2026-10-17, bought nothing) is
+ *              detected at request time and routed to the MediaProjection path.
  *  - API 28-29 : performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT) triggers
  *              the system screenshot UI. System owns save/share.
  *  - API <28 : no accessibility screenshot API — falls back to CaptureActivity
@@ -133,10 +133,10 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
             if (hasScreenshotCapability()) {
                 takeScreenshotCompat();
             } else {
-                // 1.1.9-probe: the config deliberately stops declaring
-                // canTakeScreenshot, so takeScreenshot() can never succeed.
-                // Route to the MediaProjection path instead — all three modes
-                // keep working, each capture needs one consent dialog.
+                // The config does not declare canTakeScreenshot, so
+                // takeScreenshot() can never succeed. Route to the
+                // MediaProjection path instead — all three modes keep working,
+                // each capture needs one consent dialog.
                 startLegacyCapture();
             }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {

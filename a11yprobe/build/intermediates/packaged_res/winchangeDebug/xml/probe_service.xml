@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Variant B — baseline control + the one attribute unique to SnapTile.
+
+     Identical to variant A except for accessibilityEventTypes. This is the only
+     declared value left that separates SnapTile from every accessibility app
+     super.money leaves alone (Bitwarden declares typeWindowStateChanged, Key
+     Mapper declares none, and AOSP defaults an absent attribute to 0).
+
+     If A is clean and B is flagged, dropping this attribute fixes SnapTile
+     outright: the service ignores every event it receives, so the value is
+     decorative. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowsChanged"
+    android:description="@string/probe_label" />

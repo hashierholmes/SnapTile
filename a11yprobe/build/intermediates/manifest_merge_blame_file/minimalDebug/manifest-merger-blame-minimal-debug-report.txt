@@ -1,0 +1,67 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.snaptile.a11yprobe.minimal"
+4    android:versionCode="1"
+5    android:versionName="1.0-minimal" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="21"
+8-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml
+9        android:targetSdkVersion="34" />
+9-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml
+10
+11    <application
+11-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:4:5-31:19
+12        android:allowBackup="false"
+12-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:5:9-36
+13        android:debuggable="true"
+14        android:label="@string/probe_label"
+14-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:6:9-44
+15        android:supportsRtl="true" >
+15-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:7:9-35
+16        <activity
+16-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:9:9-16:20
+17            android:name="com.snaptile.a11yprobe.MainActivity"
+17-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:10:13-41
+18            android:exported="true" >
+18-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:11:13-36
+19            <intent-filter>
+19-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:12:13-15:29
+20                <action android:name="android.intent.action.MAIN" />
+20-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:13:17-69
+20-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:13:25-66
+21
+22                <category android:name="android.intent.category.LAUNCHER" />
+22-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:14:17-77
+22-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:14:27-74
+23            </intent-filter>
+24        </activity>
+25
+26        <!-- The payload is the XML this points at, which is what a risk SDK reads. -->
+27        <service
+27-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:19:9-30:19
+28            android:name="com.snaptile.a11yprobe.ProbeService"
+28-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:20:13-41
+29            android:exported="true"
+29-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:21:13-36
+30            android:label="@string/probe_label"
+30-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:22:13-48
+31            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE" >
+31-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:23:13-79
+32            <intent-filter>
+32-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:24:13-26:29
+33                <action android:name="android.accessibilityservice.AccessibilityService" />
+33-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:25:17-92
+33-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:25:25-89
+34            </intent-filter>
+35
+36            <meta-data
+36-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:27:13-29:57
+37                android:name="android.accessibilityservice"
+37-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:28:17-60
+38                android:resource="@xml/probe_service" />
+38-->/home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/AndroidManifest.xml:29:17-54
+39        </service>
+40    </application>
+41
+42</manifest>
