@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.text.method.ScrollingMovementMethod;
 import android.view.accessibility.AccessibilityManager;
 import android.widget.ScrollView;
@@ -131,6 +132,27 @@ public class DiagnosticsActivity extends Activity {
             }
         }
 
+        // Ground truth that package visibility cannot hide: the secure setting
+        // lists every enabled service, including ones this app is not allowed to
+        // inspect. It is the same set a risk SDK bases its warning on, so it is
+        // the honest answer to "which services are live right now".
+        sb.append("\n----------------------------------------\n");
+        sb.append("ENABLED per Settings.Secure (unfiltered)\n");
+        String raw = Settings.Secure.getString(getContentResolver(),
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
+        if (raw == null || raw.trim().isEmpty()) {
+            sb.append(" (none)\n");
+        } else {
+            for (String component : raw.split(":")) {
+                component = component.trim();
+                if (component.isEmpty()) continue;
+                int slash = component.indexOf('/');
+                String pkg = slash > 0 ? component.substring(0, slash) : component;
+                sb.append(" ").append(component).append('\n');
+                sb.append("   installer ").append(installerOf(pm, pkg)).append('\n');
+            }
+        }
+
         sb.append("\n----------------------------------------\n");
         sb.append("CAN_TAKE_SCREENSHOT = this service may capture\n");
         sb.append("the screen itself (not just trigger the system\n");
@@ -148,20 +170,22 @@ public class DiagnosticsActivity extends Activity {
 
     @SuppressWarnings("deprecation")
     private String installerOf(PackageManager pm, String pkg) {
-        String installer = null;
         try {
+            String installer;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 InstallSourceInfo si = pm.getInstallSourceInfo(pkg);
                 installer = si != null ? si.getInstallingPackageName() : null;
             } else {
                 installer = pm.getInstallerPackageName(pkg);
             }
-        } catch (Exception ignored) {
-            // Package visibility / unknown installer — treated as sideloaded.
+            if (installer == null || installer.isEmpty()) return "(none) -> SIDELOADED";
+            if ("com.android.vending".equals(installer)) return installer + " -> PLAY (trusted)";
+            return installer + " -> not Play";
+        } catch (Exception e) {
+            // Package visibility: not allowed to inspect this one. Saying
+            // "sideloaded" here would be a guess, so say what we actually know.
+            return "(not visible to SnapTile)";
         }
-        if (installer == null || installer.isEmpty()) return "(none) -> SIDELOADED";
-        if ("com.android.vending".equals(installer)) return installer + " -> PLAY (trusted)";
-        return installer + " -> not Play";
     }
 
     private static String hex(int v) {

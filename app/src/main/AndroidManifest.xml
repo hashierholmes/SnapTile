@@ -8,6 +8,17 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
 
+    <!-- Diagnostics enumerates accessibility services to compare install sources.
+         Without this, package visibility (targetSdk 34) restricts that list to
+         system packages plus SnapTile itself, which is exactly the comparison we
+         need to be able to make. Matches any app that declares an accessibility
+         service; it grants no access to anything else they do. -->
+    <queries>
+        <intent>
+            <action android:name="android.accessibilityservice.AccessibilityService" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
