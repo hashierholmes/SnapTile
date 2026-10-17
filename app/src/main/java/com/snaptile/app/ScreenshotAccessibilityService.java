@@ -49,7 +49,32 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
     @Override
     protected void onServiceConnected() {
         super.onServiceConnected();
+        enforceMinimalCapabilities();
         sInstance = this;
+    }
+
+    /**
+     * Re-assert the minimal event/feedback/flags set at runtime.
+     *
+     * The *capabilities* (read window content, filter key events, inject gestures) are
+     * not settable through the public API — they come from
+     * res/xml/accessibility_service_config.xml, which declares nothing but
+     * canTakeScreenshot="true". These three fields are settable, so pin them here to
+     * keep the live AccessibilityServiceInfo identical to the XML on every OEM
+     * (banking/UPI risk SDKs read the live info, not just the declared XML).
+     */
+    private void enforceMinimalCapabilities() {
+        try {
+            android.accessibilityservice.AccessibilityServiceInfo info = getServiceInfo();
+            if (info == null) return;
+            info.eventTypes = android.view.accessibility.AccessibilityEvent.TYPE_WINDOWS_CHANGED;
+            info.feedbackType = android.accessibilityservice.AccessibilityServiceInfo.FEEDBACK_GENERIC;
+            info.flags = android.accessibilityservice.AccessibilityServiceInfo.DEFAULT;
+            info.notificationTimeout = 0;
+            setServiceInfo(info);
+        } catch (Exception ignored) {
+            // Capability tightening is best-effort; capture must never break here.
+        }
     }
 
     @Override

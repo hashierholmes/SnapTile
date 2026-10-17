@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Screenshot-only service. Deliberately minimal so risk/banking scanners see
+     no window-content read, no gesture injection, no text/keylogging events.
+     typeWindowsChanged is the smallest event set that keeps takeScreenshot()
+     reliable across OEMs; onAccessibilityEvent() ignores everything anyway. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accessibilityEventTypes="typeAllMask"
+    android:accessibilityEventTypes="typeWindowsChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:accessibilityFlags="flagDefault"
+    android:canRetrieveWindowContent="false"
+    android:canRequestTouchExplorationMode="false"
+    android:canRequestFilterKeyEvents="false"
     android:canPerformGestures="false"
     android:canTakeScreenshot="true"
-    android:description="@string/accessibility_desc" />
+    android:description="@string/accessibility_desc"
+    android:summary="@string/accessibility_desc" />

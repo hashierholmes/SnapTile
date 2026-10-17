@@ -20,6 +20,20 @@ public class ProjectionService extends Service {
     static final String CHANNEL_ID = "ss_tile";
     static final int    NOTIF_ID   = 42;
 
+    /**
+     * True between onCreate() and onDestroy().
+     *
+     * Android 14 (targetSdk 34) only allows MediaProjectionManager.getMediaProjection()
+     * after this service is actually running, and CaptureActivity now starts the service
+     * *after* the consent dialog (also an Android 14 requirement). CaptureActivity polls
+     * this flag instead of sleeping on a fixed delay.
+     */
+    private static volatile boolean sRunning = false;
+
+    static boolean isRunning() {
+        return sRunning;
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -30,7 +44,21 @@ public class ProjectionService extends Service {
             ch.setShowBadge(false);
             nm.createNotificationChannel(ch);
         }
-        startForeground(NOTIF_ID, buildNotification());
+        // Single declared type, but pass it explicitly: targetSdk 34 is stricter
+        // about mediaProjection foreground services and the 2-arg overload is deprecated.
+        if (android.os.Build.VERSION.SDK_INT >= 29) {
+            startForeground(NOTIF_ID, buildNotification(),
+                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION);
+        } else {
+            startForeground(NOTIF_ID, buildNotification());
+        }
+        sRunning = true;
+    }
+
+    @Override
+    public void onDestroy() {
+        sRunning = false;
+        super.onDestroy();
     }
 
     @Override

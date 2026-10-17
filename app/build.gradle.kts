@@ -15,16 +15,16 @@ if (keystoreFile.exists()) {
 android {
 
     namespace = "com.snaptile.app"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
 
         applicationId = "com.snaptile.app"
         minSdk = 21
-        targetSdk = 33
+        targetSdk = 34
 
-        versionCode = 7
-        versionName = "1.1.7"
+        versionCode = 8
+        versionName = "1.1.8"
 
         vectorDrawables {
             useSupportLibrary = true

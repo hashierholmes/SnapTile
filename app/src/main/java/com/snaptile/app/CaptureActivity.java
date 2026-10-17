@@ -26,10 +26,11 @@ import java.nio.ByteBuffer;
 /**
  * Coordinates the one-shot screen capture lifecycle.
  *
- * The activity starts the required media-projection foreground service, obtains the
- * user's capture consent, creates the {MediaProjection}, and reads exactly one
- * frame through an {ImageReader}. Keeping projection creation here avoids
- * passing the projection result token through the service boundary.
+ * The activity obtains the user's capture consent first, then starts the required
+ * media-projection foreground service, creates the {MediaProjection}, and reads
+ * exactly one frame through an {ImageReader}. Consent-before-service is an Android 14
+ * (targetSdk 34) requirement. Keeping projection creation here avoids passing the
+ * projection result token through the service boundary.
  *
  * After the frame is obtained, the projection is released immediately. Full-screen
  * captures are handed to {ImageSaver}; region and full-paint modes pass the
@@ -39,6 +40,9 @@ public class CaptureActivity extends Activity {
 
     private static final String TAG = "CaptureActivity";
     private static final int    REQ = 1001;
+
+    /** 40 polls x 50 ms = 2 s ceiling for the mediaProjection FGS to reach the foreground. */
+    private static final int MAX_FGS_WAIT_TRIES = 40;
 
     static Bitmap pendingBitmap = null;
 
@@ -50,6 +54,11 @@ public class CaptureActivity extends Activity {
     private ImageReader      mImageReader;
     private boolean          mCaptured = false;
     private int mW, mH, mDpi;
+
+    /** Consent result/data parked while the foreground service comes up. */
+    private int    mConsentResult;
+    private Intent mConsentData;
+    private int    mFgsTries;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,13 +80,11 @@ public class CaptureActivity extends Activity {
         mThread.start();
         mHandler = new Handler(mThread.getLooper());
 
-        // Android requires the mediaProjection foreground service to be running before
-        // MediaProjection is used. Start it before requesting user consent.
-        startForegroundService(new Intent(this, ProjectionService.class));
-
-        // Give the service a chance to enter the foreground before opening the system
-        // projection-consent dialog.
-        mHandler.postDelayed(this::requestProjection, 200);
+        // Consent comes first. Android 14 (targetSdk 34) requires that
+        // createScreenCaptureIntent() is called and granted BEFORE the mediaProjection
+        // foreground service is created; starting the service up front is rejected on
+        // Android 14+. The service is started in onActivityResult() instead.
+        requestProjection();
     }
 
     private void requestProjection() {
@@ -96,21 +103,70 @@ public class CaptureActivity extends Activity {
             done(); return;
         }
 
-        MediaProjectionManager mgr =
-                (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
-        mProjection = mgr.getMediaProjection(result, data);
-        if (mProjection == null) {
-            toast("Could not create projection");
+        // Consent granted -> now the mediaProjection foreground service may start.
+        // getMediaProjection() is only valid once that service is actually running,
+        // so start it and poll ProjectionService.isRunning() rather than sleeping.
+        try {
+            startForegroundService(new Intent(this, ProjectionService.class));
+        } catch (Exception e) {
+            Log.e(TAG, "startForegroundService failed", e);
+            toast("Capture error: " + e.getMessage());
             done(); return;
         }
 
-        mProjection.registerCallback(new MediaProjection.Callback() {
-            @Override public void onStop() { releaseCapture(); }
-        }, mHandler);
+        mConsentResult = result;
+        mConsentData   = data;
+        mFgsTries      = 0;
+        Handler h = mHandler;
+        if (h != null) h.postDelayed(this::waitForProjectionService, 50);
+    }
 
-        // The projection can otherwise capture the consent/chooser UI itself. Wait until
-        // those windows have been dismissed before creating the VirtualDisplay.
-        mHandler.postDelayed(this::doCapture, 650);
+    /**
+     * Bridges consent -> running foreground service -> MediaProjection.
+     * Re-polls every 50 ms (max 2 s) so a slow system_server never breaks capture.
+     */
+    private void waitForProjectionService() {
+        Handler h = mHandler;
+        if (h == null || isFinishing()) return;
+
+        if (!ProjectionService.isRunning()) {
+            if (++mFgsTries > MAX_FGS_WAIT_TRIES) {
+                Log.e(TAG, "mediaProjection foreground service never started");
+                toast("Capture error: service failed to start");
+                runOnUiThread(this::done);
+                return;
+            }
+            h.postDelayed(this::waitForProjectionService, 50);
+            return;
+        }
+
+        runOnUiThread(() -> {
+            // Handler may be gone if the activity was torn down while we hopped threads.
+            Handler ui = mHandler;
+            if (ui == null || isFinishing()) { done(); return; }
+
+            MediaProjectionManager mgr =
+                    (MediaProjectionManager) getSystemService(MEDIA_PROJECTION_SERVICE);
+            try {
+                mProjection = mgr.getMediaProjection(mConsentResult, mConsentData);
+            } catch (Exception e) {
+                Log.e(TAG, "getMediaProjection failed", e);
+                toast("Could not create projection");
+                done(); return;
+            }
+            if (mProjection == null) {
+                toast("Could not create projection");
+                done(); return;
+            }
+
+            mProjection.registerCallback(new MediaProjection.Callback() {
+                @Override public void onStop() { releaseCapture(); }
+            }, ui);
+
+            // The projection can otherwise capture the consent/chooser UI itself. Wait
+            // until those windows have been dismissed before creating the VirtualDisplay.
+            ui.postDelayed(this::doCapture, 650);
+        });
     }
 
     private void doCapture() {
@@ -216,6 +272,7 @@ public class CaptureActivity extends Activity {
     private void done() {
         stopService(new Intent(this, ProjectionService.class));
         if (mThread != null) { mThread.quitSafely(); mThread = null; }
+        mHandler = null; // stops any in-flight consent/projection polling chain
         finish();
     }
 
@@ -227,6 +284,7 @@ public class CaptureActivity extends Activity {
     protected void onDestroy() {
         releaseCapture();
         if (mThread != null) { mThread.quitSafely(); mThread = null; }
+        mHandler = null;
         super.onDestroy();
     }
 }
