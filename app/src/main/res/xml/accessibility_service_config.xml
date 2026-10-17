@@ -1,25 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Screenshot-only service. Deliberately minimal so risk/banking scanners see
-     no window-content read, no gesture injection, no text events — and, as of
-     1.1.12, no event types at all.
+<!-- Screenshot-only service, deliberately minimal.
 
-     accessibilityEventTypes is not declared: it was the last declared value
-     unique to SnapTile among the accessibility services super.money leaves
-     alone (Bitwarden declares typeWindowStateChanged, Key Mapper declares
-     nothing), and dropping it is free — onAccessibilityEvent() ignores every
-     event it receives, and neither takeScreenshot() nor performGlobalAction()
-     depends on event delivery. AOSP confirms an absent attribute means 0, not
-     typeAllMask (AccessibilityServiceInfo XML parsing), so "declares nothing"
-     really is nothing.
+     1.1.13 withholds canTakeScreenshot as one half of a clean 2x2 test against
+     the bank/UPI warning. The earlier capability test (1.1.9-probe) was not
+     clean: it dropped the capability but kept
+     accessibilityEventTypes="typeWindowsChanged", so a positive result could not
+     be attributed to either one. This build drops the capability *and* the event
+     type (1.1.12 dropped the event type alone).
 
-     If the warning survives this, no configuration can be the trigger and the
-     remaining explanation is provenance: sideloaded, never installed from a
-     trusted store. If it clears, the event type was it.
+     That leaves the service declaring nothing beyond what the
+     enabled-but-unflagged services on the test device already declare: Key
+     Mapper (sideloaded, enabled) declares window content, key filtering, gesture
+     injection and fingerprint gestures; Shizuku-Next (sideloaded, enabled)
+     declares window content plus window state/content events. Neither declares
+     CAN_TAKE_SCREENSHOT, and neither is flagged.
 
-     canTakeScreenshot stays declared: it is what makes the prompt-free capture
-     path possible. It was withheld for a test on 2026-10-17 (1.1.9-probe) and
-     that build was flagged identically, so it is not what these SDKs key on —
-     removing it bought nothing and cost the consent-free capture. -->
+     The matrix: 1.1.11 (capability + event type) was flagged. 1.1.12 (event type
+     removed) and 1.1.13 (both removed) separate the last two candidates. If
+     1.1.13 is still flagged, no declared value can be the trigger and the cause
+     is app-level rather than anything in this file.
+
+     Consequence of withholding the capability: takeScreenshot() cannot succeed,
+     so capture is routed to the MediaProjection path and all three modes still
+     work, at the cost of one consent dialog per capture. See
+     ScreenshotAccessibilityService.hasScreenshotCapability(). -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:accessibilityFlags="flagDefault"
@@ -27,6 +31,6 @@
     android:canRequestTouchExplorationMode="false"
     android:canRequestFilterKeyEvents="false"
     android:canPerformGestures="false"
-    android:canTakeScreenshot="true"
+    android:canTakeScreenshot="false"
     android:description="@string/accessibility_desc"
     android:summary="@string/accessibility_desc" />

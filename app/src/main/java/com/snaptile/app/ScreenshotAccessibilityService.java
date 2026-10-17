@@ -21,9 +21,17 @@ import androidx.annotation.RequiresApi;
  *
  *  - API 30+ : takeScreenshot(displayId, executor, callback) returns a Bitmap
  *              directly to the app. All 3 SnapTile modes keep working.
- *              This needs CAPABILITY_CAN_TAKE_SCREENSHOT, which the XML grants.
- *              A build that withholds it (tested 2026-10-17, bought nothing) is
- *              detected at request time and routed to the MediaProjection path.
+ *              This needs CAPABILITY_CAN_TAKE_SCREENSHOT, which the XML grants
+ *              as of 1.1.12 and withholds in 1.1.13. The 1.1.9 probe tested the
+ *              same thing and appeared to exonerate the capability, but that
+ *              build still declared accessibilityEventTypes="typeWindowsChanged",
+ *              so its result could not be attributed. It is the last declared
+ *              value the flagged service has that no enabled, unflagged service
+ *              on the test device has (Key Mapper: window content + key
+ *              filtering + gestures; Shizuku-Next: window content). A build
+ *              without the capability detects it at request time and routes to
+ *              the MediaProjection path — all three modes still work, one
+ *              consent dialog per capture.
  *  - API 28-29 : performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT) triggers
  *              the system screenshot UI. System owns save/share.
  *  - API <28 : no accessibility screenshot API — falls back to CaptureActivity
@@ -86,10 +94,10 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
     /**
      * Re-assert the minimal event/feedback/flags set at runtime.
      *
-     * The *capabilities* (read window content, filter key events, inject gestures) are
-     * not settable through the public API — they come from
-     * res/xml/accessibility_service_config.xml, which declares nothing but
-     * canTakeScreenshot="true". These three fields are settable, so pin them here to
+     * The *capabilities* (read window content, filter key events, inject gestures)
+     * are not settable through the public API — they come from
+     * res/xml/accessibility_service_config.xml, which in 1.1.13 declares nothing at
+     * all. These three fields are settable, so pin them here to
      * keep the live AccessibilityServiceInfo identical to the XML on every OEM
      * (banking/UPI risk SDKs read the live info, not just the declared XML).
      * eventTypes is pinned to 0 for the same reason the XML omits it: the service

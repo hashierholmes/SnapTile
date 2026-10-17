@@ -3,6 +3,7 @@ package com.snaptile.app;
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.app.Activity;
 import android.content.pm.InstallSourceInfo;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.os.Build;
@@ -82,13 +83,19 @@ public class DiagnosticsActivity extends Activity {
         sb.append("Verified against super.money, 2026-10-17:\n");
         sb.append(" - only ENABLED services matter: disabling\n");
         sb.append("   SnapTile's service makes the warning go away\n");
-        sb.append(" - declared capabilities do not matter: a build\n");
-        sb.append("   without canTakeScreenshot was flagged too,\n");
-        sb.append("   while Key Mapper's far broader service was not\n\n");
-        sb.append("Left to separate: provenance (sideloaded vs a\n");
-        sb.append("trusted store) and the event type. Compare the\n");
-        sb.append("installer line of every ENABLED entry below.\n\n");
+        sb.append(" - install source does not decide it on its own:\n");
+        sb.append("   Key Mapper and Shizuku-Next are sideloaded,\n");
+        sb.append("   ENABLED, and not flagged (Key Mapper declares\n");
+        sb.append("   window content, key filtering and gestures)\n\n");
+        sb.append("Candidate left: CAN_TAKE_SCREENSHOT. It is the\n");
+        sb.append("only capability the flagged service has that no\n");
+        sb.append("ENABLED, unflagged service here has. 1.1.13\n");
+        sb.append("withholds it to test that directly; the earlier\n");
+        sb.append("1.1.9 probe could not settle it because that\n");
+        sb.append("build still declared accessibilityEventTypes.\n");
+        sb.append("Compare caps/events on the ENABLED entries.\n\n");
         sb.append("this app  : ").append(getPackageName()).append('\n');
+        sb.append("version   : ").append(versionName()).append('\n');
         sb.append("installer : ").append(installerOf(pm, getPackageName())).append('\n');
         sb.append("sdk       : ").append(Build.VERSION.SDK_INT).append('\n');
 
@@ -157,8 +164,20 @@ public class DiagnosticsActivity extends Activity {
         sb.append("CAN_TAKE_SCREENSHOT = this service may capture\n");
         sb.append("the screen itself (not just trigger the system\n");
         sb.append("screenshot), which is what OTP-stealing trojans\n");
-        sb.append("want. Tested 2026-10-17: not the trigger here.\n");
+        sb.append("want. super.money's warning says the app can\n");
+        sb.append("\"control your screen\". 1.1.13 withholds it so\n");
+        sb.append("the next reading says whether that is the rule.\n");
         return sb.toString();
+    }
+
+    /** Version code + name, so a dump identifies the build it came from. */
+    private String versionName() {
+        try {
+            PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+            return pi.versionName + " (" + pi.versionCode + ")";
+        } catch (PackageManager.NameNotFoundException e) {
+            return "?";
+        }
     }
 
     /** Package + class of a service, used to match installed against enabled. */

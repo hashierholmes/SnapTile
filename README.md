@@ -262,18 +262,20 @@ instead.
 The warning is **not** about what SnapTile declares, and that is now tested rather than
 inferred. What the *unflagged* apps on the same device declare:
 
-| | SnapTile (flagged) | Key Mapper (on, not flagged) | Bitwarden (on, not flagged) |
-|---|---|---|---|
-| `canRetrieveWindowContent` | false | **true** | **true** |
-| `canPerformGestures` | false | **true** | – |
-| `canRequestFilterKeyEvents` | false | **true** | – |
-| `accessibilityEventTypes` | typeWindowsChanged | *(none declared)* | typeWindowStateChanged |
-| `isAccessibilityTool` | absent | absent | **false** |
-| `canTakeScreenshot` | **true** | absent | absent |
+| | SnapTile (flagged) | Key Mapper (on, not flagged) | Bitwarden (on, not flagged) | Shizuku-Next (on, not flagged) |
+|---|---|---|---|---|
+| install source | sideloaded | **sideloaded** | Play | **sideloaded** |
+| `canRetrieveWindowContent` | false | **true** | **true** | **true** |
+| `canPerformGestures` | false | **true** | – | – |
+| `canRequestFilterKeyEvents` | false | **true** | – | – |
+| `accessibilityEventTypes` | 0x00000000 (1.1.12+) | 0 | 0x20 | 0x820 |
+| `canTakeScreenshot` | **0x80** | absent | absent | absent |
 
 Key Mapper declares window content, gesture injection *and* key-event filtering — the
-textbook malicious combination — and is left alone. Bitwarden even declares
-`isAccessibilityTool="false"` and is left alone.
+textbook malicious combination — **and is sideloaded**, and is left alone. Bitwarden even
+declares `isAccessibilityTool="false"` and is left alone. Read together, the enabled
+services say the rule is neither "third party", nor "sideloaded", nor "declares dangerous
+capabilities".
 
 Ruled out by experiment or by AOSP source, not by guesswork:
 
@@ -282,24 +284,20 @@ Ruled out by experiment or by AOSP source, not by guesswork:
 | "any enabled third-party service is flagged" | **No** — Bitwarden/Key Mapper are enabled and unflagged |
 | `typeAllMask`/keylogging event-set heuristic | **No** — Key Mapper declares no event types and is unflagged |
 | `isAccessibilityTool="false"` is treated as suspicious | **No** — Bitwarden declares exactly that and is unflagged |
-| `canTakeScreenshot="true"` is the trigger | **No** — 1.1.9-probe shipped with it `false`; super.money flagged that build identically (the dialog named "SnapTile Debug", the probe build) |
+| **provenance** — a trusted store buys a skip | **No** — Key Mapper and Shizuku-Next are sideloaded, enabled and unflagged; the Talsec-style pipeline description does not survive contact with the device |
+| `accessibilityEventTypes` | **tested in `1.1.12`** — the attribute is gone from the XML *and* from the runtime pin (pin the XML alone and `setServiceInfo` re-imposes the old value). It costs nothing: the service ignores every event it receives |
+| `canTakeScreenshot="true"` is the trigger | **open** — `1.1.9-probe` shipped with it `false` and was flagged, but that build still declared `typeWindowsChanged`, so the result could not be attributed to either one. It is the only capability the flagged service has that **no enabled, unflagged service on the device has** (every other declarer — TalkBack, Select to Speak, System UI, Twilight — is switched off), and it matches the warning copy: "can control your screen" |
 | the service only matters when enabled | **Yes** — disabling it made the warning disappear |
 
-Two candidates remain, and they are perfectly confounded in the data above (every flagged
-app is both sideloaded *and* the only one declaring `typeWindowsChanged`):
+So `1.1.12` (event type removed, capability kept) and `1.1.13` (both removed) complete a 2×2
+that attributes the result instead of guessing at it. If `1.1.13` is still flagged, no
+declared value is the trigger and the cause is app-level — at which point the
+`a11yprobe/` module's "declares nothing at all" variant is the control that isolates it.
 
-1. **Provenance** — risk-SDK pipelines (e.g. Talsec's) give apps from a trusted store a
-   badge that *skips* the deep scan and inspect sideloaded apps only. Every unflagged
-   service came from Play; both flagged ones were sideloaded.
-2. **`accessibilityEventTypes="typeWindowsChanged"`** — the last declared value unique to
-   SnapTile. AOSP defaults an absent attribute to `0`, so Key Mapper's silence is not
-   evidence either way. Dropping it costs nothing: the service ignores every event it
-   receives. `1.1.12` does exactly that, in both the XML and the runtime pin (pin the XML
-   alone and `setServiceInfo` re-imposes the old value). If the warning survives, provenance
-   is the only explanation left; if it clears, this was it.
-
-The `a11yprobe/` module remains as the controlled version of the same question: two
-disposable apps, one declaring nothing at all.
+If the capability is what does it, the fix is to give it up: capture then either takes the
+system route — `performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT)` needs no capability and
+still avoids a consent dialog, at the cost of reading the result back from MediaStore — or
+falls back to MediaProjection with one dialog per capture.
 
 Operationally, the answer either way is the same: **the warning keys on enabled services**,
 so Banking mode clears it in one tap — and capture still works with the service off, via
