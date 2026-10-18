@@ -25,8 +25,6 @@
     <string name="banking_mode_text">Bank and UPI apps warn about any enabled third-party accessibility service, even one like SnapTile that only takes screenshots. It is now off, so those warnings stop. The tile still captures — Android asks for screen-capture consent each time. Turn it back on above for prompt-free capture.</string>
     <string name="banking_mode_toast">Accessibility turned off. Re-enable it any time from this screen.</string>
     <string name="banking_mode_settings">Turn SnapTile off under Accessibility settings</string>
-    <string name="diagnostics_title">Accessibility diagnostics</string>
-    <string name="diagnostics_btn">Diagnostics: what scanners see</string>
 
     <!-- Capture method (1.2.0). Both methods are real; the honest trade-off is
          spelled out in each description rather than hidden behind a toggle. -->

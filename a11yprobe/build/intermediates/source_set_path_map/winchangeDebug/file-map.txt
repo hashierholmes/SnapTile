@@ -1,9 +1,0 @@
-com.snaptile.a11yprobe-winchange-0 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/build/generated/res/pngs/winchange/debug
-com.snaptile.a11yprobe-winchange-1 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/build/generated/res/resValues/winchange/debug
-com.snaptile.a11yprobe-packageWinchangeDebugResources-2 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/build/intermediates/incremental/winchangeDebug/packageWinchangeDebugResources/merged.dir
-com.snaptile.a11yprobe-packageWinchangeDebugResources-3 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/build/intermediates/incremental/winchangeDebug/packageWinchangeDebugResources/stripped.dir
-com.snaptile.a11yprobe-merged_res-4 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/build/intermediates/merged_res/winchangeDebug
-com.snaptile.a11yprobe-debug-5 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/debug/res
-com.snaptile.a11yprobe-main-6 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/res
-com.snaptile.a11yprobe-winchange-7 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/winchange/res
-com.snaptile.a11yprobe-winchangeDebug-8 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/winchangeDebug/res

@@ -1,9 +1,0 @@
-com.snaptile.a11yprobe-minimal-0 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/build/generated/res/pngs/minimal/debug
-com.snaptile.a11yprobe-minimal-1 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/build/generated/res/resValues/minimal/debug
-com.snaptile.a11yprobe-packageMinimalDebugResources-2 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/build/intermediates/incremental/minimalDebug/packageMinimalDebugResources/merged.dir
-com.snaptile.a11yprobe-packageMinimalDebugResources-3 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/build/intermediates/incremental/minimalDebug/packageMinimalDebugResources/stripped.dir
-com.snaptile.a11yprobe-merged_res-4 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/build/intermediates/merged_res/minimalDebug
-com.snaptile.a11yprobe-debug-5 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/debug/res
-com.snaptile.a11yprobe-main-6 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/main/res
-com.snaptile.a11yprobe-minimal-7 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/minimal/res
-com.snaptile.a11yprobe-minimalDebug-8 /home/ubuntu/opencode-workspace/snaptile/a11yprobe/src/minimalDebug/res

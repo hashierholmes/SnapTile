@@ -203,13 +203,6 @@
                  android:visibility="gone"
                  android:text="@string/banking_mode_btn" />
 
-            <Button
-                 android:id="@+id/btnDiagnostics"
-                 android:layout_height="wrap_content"
-                 android:layout_width="match_parent"
-                 android:layout_marginTop="8dp"
-                 android:text="@string/diagnostics_btn" />
-
         </LinearLayout>
 
 <LinearLayout

@@ -1,5 +1,0 @@
-int string probe_config 0x7f010000
-int string probe_hint 0x7f010001
-int string probe_label 0x7f010002
-int string probe_open 0x7f010003
-int xml probe_service 0x7f020000

@@ -27,16 +27,7 @@
          1.2.0 stops looking for a setting that clears it and lets the user pick
          a method instead. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
-    <!-- Diagnostics enumerates accessibility services to compare install sources.
-         Without this, package visibility (targetSdk 34) restricts that list to
-         system packages plus SnapTile itself, which is exactly the comparison we
-         need to be able to make. Matches any app that declares an accessibility
-         service; it grants no access to anything else they do.
-
-         The explicit <package> entries below cover services that are enabled in
-         the secure setting but did not appear in that list - naming them is the
-         only way to read their install source, capabilities and dates, and those
-         are the controls this comparison depends on. -->
+    
     <queries>
         <intent>
             <action android:name="android.accessibilityservice.AccessibilityService" />
@@ -97,11 +88,6 @@
             android:excludeFromRecents="true"
             android:taskAffinity=""
             android:launchMode="singleTop" />
-
-        <activity
-            android:name=".DiagnosticsActivity"
-            android:exported="false"
-            android:label="@string/diagnostics_title" />
 
         <activity
             android:name=".AccessibilitySetupActivity"

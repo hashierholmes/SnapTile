@@ -122,7 +122,6 @@ SnapTile does not require a backend, network connection, account, or third-party
 | `SnipActivity` | Provides region selection and the current screenshot paint editor. |
 | `ImageSaver` | Writes captured or edited screenshots to shared storage as PNG files. |
 | `PaintToolbar` | Standalone drawing-toolbar helper kept separate from the current `SnipActivity` editor implementation. |
-| `DiagnosticsActivity` | Read-only dump of what accessibility scanners can see, for debugging the banking/UPI warning. |
 
 ---
 
@@ -309,8 +308,8 @@ at app level that no enabled, unflagged app on the device declares is **screen c
 permission.
 
 **Result: the warning survived.** `1.1.14` is flagged with `mediaProjection=no` on its own
-Diagnostics screen, so the manifest is exhausted too. Three further facts came out of the same
-dump:
+dump, so the manifest is exhausted too. Three further facts came out of the same
+data:
 
 - **install/update dates do not decide it** — every enabled service on the device was installed
   between 2026-10-14 and 2026-10-17, SnapTile included; Key Mapper (10-15) and Shizuku-Next
@@ -322,8 +321,8 @@ dump:
   and is not flagged. The only differences left are `isAccessibilityTool` (true there, false
   here), its install source, and what the two apps say about themselves.
 
-So `1.1.15` tested the two remaining explanations, and both are readable on the Diagnostics
-screen:
+So `1.1.15` tested the two remaining explanations, and both are readable in the
+data:
 
 1. **The scanner reads what an app says about itself** — the bound class name
    (`ScreenshotAccessibilityService`) and the description text ("...only to take screenshots...")
@@ -353,12 +352,10 @@ consent dialog per capture) while using banking and UPI apps, **Native** when th
 matters more than the warning.
 
 Operationally the answer stays: **the warning keys on enabled services**, so Banking mode clears
-it in one tap. **Diagnostics: what scanners see** now prints, per enabled service, its component
-class name, declared capabilities, event types, description text, the app's install source
-(API 34 `PACKAGE_SOURCE_*`), whether its app declares MediaProjection / video-output capture /
-overlay, its install and update dates, **every activity and service class it declares**, and
-**its full permission list** — so SnapTile's app-level surface can be diffed line by line
-against the enabled apps that are not flagged.
+it in one tap. The investigation data (per-service component class, capabilities, event types,
+description, install source, dates, full permission list) showed that every field of SnapTile's
+live `AccessibilityServiceInfo` is a subset of some unflagged service's — the decision does not
+come from the accessibility info at all.
 
 ### `isAccessibilityTool="true"` — tested, answered, removed (1.1.16)
 
