@@ -408,7 +408,7 @@ The main screen has a **Capture method** card:
 
 | Method | How it captures | Cost |
 | --- | --- | --- |
-| **Native — accessibility** (default) | `ScreenshotAccessibilityService` + `takeScreenshot()` — all three modes prompt-free. The capability was tested in both directions (1.1.11–1.1.16) and found free, so 1.2.3 restores it. Full-screen saves silently; no toast. | needs an enabled accessibility service, and banks/UPI apps warn about it |
+| **Native — accessibility** (default) | `ScreenshotAccessibilityService`: full screen → system screenshot action (native popup, system saves); region / full+paint → `takeScreenshot()` in-app bitmap. All three prompt-free. | needs an enabled accessibility service, and banks/UPI apps warn about it |
 | **Legacy — screen recording** | `CaptureActivity` + MediaProjection, the way any screen recorder works | Android asks for consent before **every** capture |
 
 Choosing Legacy also disables SnapTile's accessibility service, because a legacy method that
@@ -420,8 +420,8 @@ the **setup screen** rather than silently switching methods: it would be answeri
 question than the one asked, particularly from the Quick Settings tile.
 
 The capability was tested free and is back in 1.2.3 — no MediaProjection for region or paint
-anymore, and no "Screenshot saved" toast for full screen (the system notification is already
-self-evident).
+anymore. Full screen uses the system action so the native screenshot UI appears; no redundant
+"Screenshot saved" toast.
 
 ### The setup screen
 

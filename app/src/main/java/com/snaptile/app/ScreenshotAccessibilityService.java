@@ -19,8 +19,10 @@ import androidx.annotation.RequiresApi;
  *
  * MediaProjection needs a consent dialog and a foreground service; this does not:
  *
- *  - API 30+ : takeScreenshot() returns the bitmap in-app for all three modes
- *              (full screen, region, full + paint). The config declares
+ *  - API 30+ : full screen uses performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT)
+ *              so the system takes and saves the shot and shows its native UI.
+ *              Region and full+paint use takeScreenshot() to get the bitmap in-app
+ *              for cropping and drawing. The config declares
  *              CAPABILITY_CAN_TAKE_SCREENSHOT as of 1.2.3 (1.2.1 had withheld
  *              it to match ScreenshotTile's minimum; the investigation proved the
  *              capability does not affect the banking/UPI warning — tested both
@@ -148,7 +150,13 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
     private void handleRequest() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (hasScreenshotCapability()) {
-                takeScreenshotCompat();
+                // Full screen: let the system take and save it (shows native UI, no toast).
+                // Region / full+paint: we need the bitmap in-app for crop/draw, so use takeScreenshot().
+                if (ScreenshotChooserActivity.MODE_FULL.equals(sPendingMode)) {
+                    systemScreenshot();
+                } else {
+                    takeScreenshotCompat();
+                }
             } else if (ScreenshotChooserActivity.MODE_FULL.equals(sPendingMode)) {
                 // No capability (OEM withheld it despite the config). A global action
                 // needs no capability, so let the system take the shot and own the

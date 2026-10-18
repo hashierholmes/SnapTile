@@ -13,10 +13,11 @@ import android.provider.Settings;
  *
  *  - NATIVE (default) goes through {@link ScreenshotAccessibilityService}. No
  *    consent dialog, no screen-recording indicator: one tap on the tile and the
- *    shot is taken. The service declares the screenshot capability (as of 1.2.3;
- *    the matrix tested it in both directions across 1.1.11–1.1.16 and found it
- *    free — identical flagging either way), so all three modes work prompt-free.
- *    It requires an enabled accessibility service, and every bank and UPI app
+ *    shot is taken. Full screen uses the system screenshot action (native popup,
+ *    system saves). Region and full+paint use takeScreenshot() for the in-app
+ *    bitmap. The capability is declared (as of 1.2.3; the matrix tested it in both
+ *    directions across 1.1.11–1.1.16 and found it free — identical flagging either
+ *    way). It requires an enabled accessibility service, and every bank and UPI app
  *    treats an enabled accessibility service as a risk signal and warns about it —
  *    including for apps that plainly only take screenshots. That is a property of
  *    the whole category, not of SnapTile's configuration: the otherwise-minimal,
