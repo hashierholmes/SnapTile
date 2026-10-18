@@ -19,13 +19,15 @@ import androidx.annotation.RequiresApi;
  *
  * MediaProjection needs a consent dialog and a foreground service; this does not:
  *
- *  - API 30+ : performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT) makes the
- *              system take and save the shot with no consent dialog. That needs
- *              no capability, and since 1.2.1 it is the only full-screen route
- *              here: the config declares no capability at all, matching the
- *              ScreenshotTile minimum. Region and paint modes need the bitmap in
- *              the app, so they go through MediaProjection (consent) instead.
- *  - API 28-29 : the same global action; same global action since API 28.
+ *  - API 30+ : takeScreenshot() returns the bitmap in-app for all three modes
+ *              (full screen, region, full + paint). The config declares
+ *              CAPABILITY_CAN_TAKE_SCREENSHOT as of 1.2.3 (1.2.1 had withheld
+ *              it to match ScreenshotTile's minimum; the investigation proved the
+ *              capability does not affect the banking/UPI warning — tested both
+ *              ways, identical results — so 1.2.3 restores it).
+ *  - API 28-29 : performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT) triggers the
+ *              system screenshot UI. System owns save/share, so only full-screen
+ *              mode can use it.
  *  - API <28 : no accessibility screenshot API — MediaProjection (CaptureActivity).
  *
  * Whether this path runs at all is the user's choice in {@link CapturePrefs}: with
@@ -96,12 +98,12 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
      * Re-assert the minimal event/feedback/flags set at runtime.
      *
      * The *capabilities* (read window content, filter key events, inject gestures,
-     * take screenshots) are not settable through the public API, and as of 1.2.1
-     * the config declares none of them either — it is the ScreenshotTile minimum:
-     * an event type, a feedback type and a description. These three fields are
-     * settable, so pin them here to keep the live AccessibilityServiceInfo
-     * identical to the XML on every OEM (risk SDKs read the live info, not just
-     * the declared XML).
+     * take screenshots) are not settable through the public API — they come from
+     * res/xml/accessibility_service_config.xml, which declares the screenshot
+     * capability as of 1.2.3 (tested in both directions across 1.1.11-1.1.16,
+     * identical flagging, so it is free). These three fields are settable, so pin
+     * them here to keep the live AccessibilityServiceInfo identical to the XML on
+     * every OEM (risk SDKs read the live info, not just the declared XML).
      * eventTypes is pinned to 0 because the service consumes no events (see
      * onAccessibilityEvent), so requesting none is honest even though the XML
      * mirrors the reference app's typeWindowStateChanged. It also has to be pinned
@@ -148,11 +150,10 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
             if (hasScreenshotCapability()) {
                 takeScreenshotCompat();
             } else if (ScreenshotChooserActivity.MODE_FULL.equals(sPendingMode)) {
-                // No capability: 1.2.1's config declares none, and an OEM could
-                // withhold it even if one were declared. A global action needs no
-                // capability, so let the system take the shot and own the result —
-                // the same route as API 28-29. Region and paint modes need the
-                // bitmap in-app, so they go to MediaProjection instead of silently
+                // No capability (OEM withheld it despite the config). A global action
+                // needs no capability, so let the system take the shot and own the
+                // result — the same route as API 28-29. Region and paint modes need
+                // the bitmap in-app, so they go to MediaProjection instead of silently
                 // degrading to a system screenshot.
                 systemScreenshot();
             } else {
@@ -178,12 +179,12 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
      * shows its own UI; SnapTile only gets a bitmap through takeScreenshot(),
      * which is why region/paint modes take the MediaProjection path instead.
      *
-     * The message is deliberately plain: this is the normal route for full-screen
-     * captures, not a degraded one, so there is nothing for the user to fix.
+     * No toast on success — the system's own "Screenshot saved" notification is
+     * already visible and self-evident.
      */
     private void systemScreenshot() {
         boolean ok = performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT);
-        toast(ok ? "Screenshot taken" : "Screenshot failed");
+        if (!ok) toast("Screenshot failed");
     }
 
     /**

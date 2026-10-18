@@ -13,16 +13,15 @@ import android.provider.Settings;
  *
  *  - NATIVE (default) goes through {@link ScreenshotAccessibilityService}. No
  *    consent dialog, no screen-recording indicator: one tap on the tile and the
- *    shot is taken. Full-screen captures are taken and saved by the system itself
- *    (the service declares no screenshot capability by design as of 1.2.1 — the
- *    ScreenshotTile minimum), and region/paint captures go through the
- *    MediaProjection path, so they do show consent. It requires an enabled
- *    accessibility service, and every bank and UPI app treats an enabled
- *    accessibility service as a risk signal and warns about it — including for
- *    apps that plainly only take screenshots. That is a property of the whole
- *    category, not of SnapTile's configuration: the otherwise-minimal, widely used
- *    ScreenshotTile app is flagged the same way, in either direction, and so was
- *    every one of the configurations SnapTile shipped while testing it.
+ *    shot is taken. The service declares the screenshot capability (as of 1.2.3;
+ *    the matrix tested it in both directions across 1.1.11–1.1.16 and found it
+ *    free — identical flagging either way), so all three modes work prompt-free.
+ *    It requires an enabled accessibility service, and every bank and UPI app
+ *    treats an enabled accessibility service as a risk signal and warns about it —
+ *    including for apps that plainly only take screenshots. That is a property of
+ *    the whole category, not of SnapTile's configuration: the otherwise-minimal,
+ *    widely used ScreenshotTile app is flagged the same way, in either direction,
+ *    and so was every one of the configurations SnapTile shipped while testing it.
  *
  *  - LEGACY goes through {@link CaptureActivity} and Android's MediaProjection
  *    consent dialog, exactly like any screen recorder. Nothing about it needs an

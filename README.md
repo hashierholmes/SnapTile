@@ -225,20 +225,22 @@ capability, class name, description text or provenance changes the outcome. Ever
 variables was tested — see [What we know so far](#what-we-know-so-far-2026-10-17) — which is why
 minimising SnapTile's declared capabilities cannot, on its own, silence the warning.
 
-SnapTile's service is still deliberately screenshot-only, and since 1.2.1 it declares **exactly what
-ScreenshotTile declares**: the smallest config an accessibility service can have and still take a
-screenshot.
+SnapTile's service is still deliberately screenshot-only. As of 1.2.3 it declares the screenshot
+capability (`canTakeScreenshot="true"`) alongside the event type, feedback type and description:
 
 ```xml
 <accessibility-service
     android:accessibilityEventTypes="typeWindowStateChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
+    android:canTakeScreenshot="true"
     android:description="@string/accessibility_desc" />
 ```
 
-No capability at all — no window content, no gestures, no keystroke filtering, not even the
-screenshot capability. There is nothing declared that the app does not use: `onAccessibilityEvent()`
-processes nothing, and the service exists only to answer `GLOBAL_ACTION_TAKE_SCREENSHOT`.
+The capability was tested in both directions across 1.1.11–1.1.16 (declared and withheld) and
+**changed nothing about the banking/UPI warning** — identical flagging either way — so 1.2.3 restores
+it. With the capability declared, all three capture modes (full screen, region, full + paint) work
+prompt-free through the native path. No window content, no gestures, no keystroke filtering — only
+what the app actually uses.
 
 The event, feedback and flag fields are re-asserted at runtime in
 `ScreenshotAccessibilityService.onServiceConnected()`, with event types pinned to `0` because the
@@ -399,14 +401,14 @@ anyway. Two consequences:
    Bitwarden and Twilight are all enabled on the reference device and none is flagged — none of
    them is a screenshot tool.
 
-### Capture methods (1.2.0, table revised in 1.2.1)
+### Capture methods (1.2.0, table revised in 1.2.3)
 
 1.2.0 stopped hunting for a setting that clears the warning and gave the user the choice instead.
 The main screen has a **Capture method** card:
 
 | Method | How it captures | Cost |
 | --- | --- | --- |
-| **Native — accessibility** (default) | `ScreenshotAccessibilityService` + `GLOBAL_ACTION_TAKE_SCREENSHOT` — the system takes and saves the full-screen shot. Region and paint go through MediaProjection | needs an enabled accessibility service, and banks/UPI apps warn about it |
+| **Native — accessibility** (default) | `ScreenshotAccessibilityService` + `takeScreenshot()` — all three modes prompt-free. The capability was tested in both directions (1.1.11–1.1.16) and found free, so 1.2.3 restores it. Full-screen saves silently; no toast. | needs an enabled accessibility service, and banks/UPI apps warn about it |
 | **Legacy — screen recording** | `CaptureActivity` + MediaProjection, the way any screen recorder works | Android asks for consent before **every** capture |
 
 Choosing Legacy also disables SnapTile's accessibility service, because a legacy method that
@@ -417,12 +419,9 @@ When a capture is requested with the native method selected but nothing enabled,
 the **setup screen** rather than silently switching methods: it would be answering a different
 question than the one asked, particularly from the Quick Settings tile.
 
-The capability question was closed in 1.2.1 rather than 1.2.0. `canTakeScreenshot="true"` came back
-in 1.2.0 on the grounds that the matrix had tested it in both directions and found it free; 1.2.1
-drops it anyway, along with every other optional attribute, because "free" was still one declared
-capability more than the reference app needs and one more than SnapTile uses. The consequences are
-deliberate and visible: full-screen captures are taken and saved by the system (no consent, no
-bitmap in the app), and region/paint captures need MediaProjection's consent dialog.
+The capability was tested free and is back in 1.2.3 — no MediaProjection for region or paint
+anymore, and no "Screenshot saved" toast for full screen (the system notification is already
+self-evident).
 
 ### The setup screen
 
