@@ -266,6 +266,54 @@ accessibility service) — the same card then shows **Open accessibility setting
 `disableSelf()` needs Android 7.0+; on older releases the button sends you to Settings
 instead.
 
+### Closed (2026-10-19): the SDK flags apps it does not recognise
+
+The investigation is over, and the answer is not a field, a flag or a name. Four final
+experiments settled it:
+
+| Experiment | Build | Result |
+|---|---|---|
+| App label neutralised (`SnapTile` → `Tile`) | 1.2.6 | still flagged |
+| Accessibility description neutralised | 1.2.8 | still flagged — the dump confirmed the new text was installed and the service enabled |
+| Service class renamed (`ScreenshotAccessibilityService` → `TileAccessibilityService`) | 1.2.9 | still flagged, label and description neutral too |
+| **Everything neutralised at once** — package `com.snaptile.app` → `com.tile.app`, label, description, class, `CaptureActivity` → `ProjectionActivity`, `ScreenshotChooserActivity` → `TileChooserActivity`, `SnipActivity` → `EditorActivity`, `ScreenshotTileService` → `TileActionService` | 1.2.10 | **still flagged** |
+| **Control: an unknown app with a neutral accessibility service** — `com.asdoi.quicktiles`, enabled on the device | — | **flagged** |
+
+That last row is the one that closes it. QuickTiles is a small, side-loaded package whose
+accessibility service says only *"This service is required for some tiles in order to work"* —
+nothing about screenshots — and Super Money flags it anyway. So the rule is not "an app that
+takes screenshots"; it is **"an enabled accessibility service belonging to an app the SDK does
+not recognise."**
+
+Who is recognised on the reference device, and who is not:
+
+| enabled, **not** flagged | via | standing |
+|---|---|---|
+| Power Menu | Play | 1M+ downloads |
+| Bitwarden | Play | very widely used |
+| Twilight | Play | very widely used |
+| Switchly | Play | widely used |
+| Lock Screen | Play | widely used |
+| Key Mapper | **sideloaded** | 500K+ downloads, long-standing tool |
+
+| enabled, **flagged** |
+|---|
+| SnapTile (`com.snaptile.app`) |
+| ScreenshotTile (`com.github.cvzi.screenshottile`) |
+| QuickTiles (`com.asdoi.quicktiles`) — the control |
+
+Key Mapper is the row that kills every remaining "declared" theory: it is side-loaded, enabled,
+and declares window content, gesture injection *and* key-event filtering — the most powerful
+combination on the device — and it is left alone, because it is a known app. SnapTile declares
+far less and is flagged, because it is not known.
+
+**Conclusion.** Nothing an app can declare, name, describe or omit changes this. The warning
+follows whether the SDK *recognises the app*, which a side-loaded app with no distribution
+history cannot arrange from inside a build. The durable answer is the one the app already
+ships: the **capture-method choice** — Legacy (no accessibility service, no warning, one consent
+dialog per capture) while using banking and UPI apps, Native when the capture itself matters
+more than the warning.
+
 ### What we know so far (2026-10-17)
 
 The warning is **not** about the accessibility declaration, and that is now tested from both
@@ -299,6 +347,12 @@ Ruled out by experiment, not by guesswork:
 | **the screen-capture declaration** (`FOREGROUND_SERVICE_MEDIA_PROJECTION` + `foregroundServiceType`) | **No** — `1.1.14` removed both, still flagged with `mediaProjection=no` |
 | **install/update dates** ("recently installed" rule) | **No** — every enabled service arrived 2026-10-14…17; Key Mapper and Shizuku-Next are as new and unflagged |
 | the service only matters when enabled | **Yes** — disabling it made the warning disappear |
+| the app **label** (`SnapTile`) | **No** — `1.2.6` renamed it to "Tile"; still flagged |
+| the **description text** | **No** — `1.2.8` neutralised it; still flagged, with the new text verified installed *and* enabled |
+| the **service class name** | **No** — `1.2.9` renamed `ScreenshotAccessibilityService` → `TileAccessibilityService`; still flagged |
+| the **app package name** | **No** — `1.2.10` moved the app to `com.tile.app`; still flagged |
+| **component names** (`Capture…`, `Screenshot…`) | **No** — `1.2.10` renamed every one; still flagged. Power Menu declares a component literally named `ScreenshotTile` and is *not* flagged |
+| "unknown app + enabled accessibility service" is enough on its own | **Yes** — the `QuickTiles` control is flagged too; see [Closed](#closed-2026-10-19-the-sdk-flags-apps-it-does-not-recognise) |
 
 With the accessibility side exhausted, the trigger is app-level. The one thing SnapTile declared
 at app level that no enabled, unflagged app on the device declares is **screen capture**:
@@ -437,12 +491,14 @@ drawn schematic illustrates step 2 — drawn, not screenshotted, so it cannot go
 versions and OEM skins. Reached from the main screen, and automatically when the native method is
 chosen but the service is off.
 
-**Both open questions closed in 1.2.1, so the twin and the probe are no longer needed.** Whether the
-scanner reads what the app says about itself: no — the twin service (1.1.15–1.2.0) was flagged
-identically and has been deleted. Whether "unknown app + enabled accessibility service" is enough on
-its own: yes, in effect — the release build is flagged and it has nothing left to strip. The
-`a11yprobe` module stays in the tree as a standalone diagnostic app; it is not part of the SnapTile
-build.
+**Every open question is now closed, so the twin, the probe and the experiment branches are all
+dead weight.** Whether the scanner reads what the app says about itself: no — the twin service
+(1.1.15–1.2.0) was flagged identically and was deleted in 1.2.1. Whether "unknown app + enabled
+accessibility service" is enough on its own: **yes** — the QuickTiles control is flagged too,
+which is the single fact that closes the whole investigation; see
+[Closed](#closed-2026-10-19-the-sdk-flags-apps-it-does-not-recognise). The `a11yprobe` module was
+removed in 1.2.5: QuickTiles answered the question it was built for, using an app that was already
+on the device.
 
 ---
 
