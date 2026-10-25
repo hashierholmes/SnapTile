@@ -15,16 +15,16 @@ if (keystoreFile.exists()) {
 android {
 
     namespace = "com.snaptile.app"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
 
         applicationId = "com.snaptile.app"
         minSdk = 21
-        targetSdk = 33
+        targetSdk = 34
 
-        versionCode = 1
-        versionName = "1.0.2"
+        versionCode = 24
+        versionName = "1.2.8"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -51,6 +51,13 @@ android {
     }
 
     buildTypes {
+        getByName("debug") {
+            // Test builds install alongside the release app: distinct package
+            // (debug cert already differs from the upload key).
+            applicationIdSuffix = ".debug"
+            resValue("string", "app_name", "SnapTile Debug")
+            resValue("string", "tile_label", "SnapTile Debug")
+        }
         getByName("release") {
             isMinifyEnabled = false
             signingConfig = signingConfigs.getByName("release")

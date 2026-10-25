@@ -69,47 +69,37 @@ SnapTile does not require a backend, network connection, account, or third-party
 [ ScreenshotTileService ]
             │
             ▼
-[ ScreenshotChooserActivity ]
-            │
-       Capture Mode
+[ ScreenshotChooserActivity ] ──► capture mode
             │
             ▼
-[ CaptureActivity ]
+[ CapturePrefs.request() ] ──► which capture method?
             │
-     MediaProjection
-       Authorization
-            │
-            ▼
-[ ProjectionService ]
-            │
-    Foreground Service
-            │
-            ▼
-[ VirtualDisplay + ImageReader ]
-            │
-       Single Frame
-            │
-            ▼
-         [ Bitmap ]
-            │
-      ┌─────┼───────────────┐
-      │     │               │
-      ▼     ▼               ▼
- Full Screen │        Full + Paint
-      │     │               │
-      │     ▼               │
-      │ [ SnipActivity ] ◄──┘
-      │     │
-      │     ├─ Region Selection
-      │     │
-      │     └─ Paint Editor
-      │
-      └──────────┬────────────┘
-                 ▼
-          [ ImageSaver ]
-                 │
-                 ▼
-      Pictures/Screenshots/
+   ┌────────┴───────────────────────────┐
+   ▼                                    ▼
+[ Native ]                         [ Legacy ]
+[ ScreenshotAccessibilityService ] [ CaptureActivity ]
+   │                                   │
+   │ full screen:                      │ MediaProjection consent
+   │ GLOBAL_ACTION_TAKE_SCREENSHOT     ▼
+   │ → the system saves the shot   [ ProjectionService ]
+   │                                   │ foreground service
+   │ region / paint:                   ▼
+   └──────────────► [ VirtualDisplay + ImageReader ]
+                        │
+                   Single Frame
+                        │
+                    [ Bitmap ]
+                        │
+       ┌────────────────┼────────────────┐
+       ▼                ▼                ▼
+  Full Screen     [ SnipActivity ]   Full + Paint
+                  Region / Paint
+                        │
+                        ▼
+                  [ ImageSaver ]
+                        │
+                        ▼
+               Pictures/Screenshots/
 ```
 
 ---
@@ -118,9 +108,12 @@ SnapTile does not require a backend, network connection, account, or third-party
 
 | Component | Responsibility |
 | :--- | :--- |
-| `MainActivity` | Provides the launcher/setup screen and developer credit. |
+| `MainActivity` | Provides the launcher/setup screen, the capture-method card, and developer credit. |
 | `ScreenshotTileService` | Exposes SnapTile through Android Quick Settings. |
 | `ScreenshotChooserActivity` | Allows the user to select the desired capture mode. |
+| `CapturePrefs` | Stores the chosen capture method and routes every capture request by it. |
+| `ScreenshotAccessibilityService` | The native capture path: system screenshot action for full screen, and the fallback into MediaProjection for region/paint or older releases. |
+| `AccessibilitySetupActivity` | The how-to-enable screen, including the restricted-settings step Android hides from side-loaded apps. |
 | `CaptureActivity` | Handles MediaProjection authorization, screen capture, bitmap creation, and capture-mode routing. |
 | `ProjectionService` | Provides the short-lived foreground service required while MediaProjection is active. |
 | `SnipActivity` | Provides region selection and the current screenshot paint editor. |
@@ -166,6 +159,7 @@ SnapTile relies primarily on native Android framework APIs:
 - `Path` — records individual drawing strokes for reversible editing.
 - `Paint` — stores brush appearance and rendering properties.
 - `TileService` — integrates SnapTile with Android Quick Settings.
+- `AccessibilityService` — performs the system screenshot action for the native capture method.
 - `Service` — provides the foreground-service execution required during screen projection.
 - `MediaStore` — stores screenshots in the system's shared media collection on modern Android versions.
 - `ContentResolver` — writes screenshot data through Android's storage APIs.

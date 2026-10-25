@@ -41,6 +41,7 @@ public class SnipActivity extends Activity {
 
     private boolean     mFullPaint;
     private SnipView    mSnipView;
+    private View        mSnipActionBar;
     private View        mSnipSaveBtn;
     private View        mSnipCloseBtn;
     private PaintCanvas mPaintCanvas;
@@ -87,14 +88,52 @@ public class SnipActivity extends Activity {
         mSnipView = new SnipView(this, CaptureActivity.pendingBitmap);
         root.addView(mSnipView, mp());
 
-        mSnipSaveBtn = makeIconBtn(R.drawable.ic_save, 0xCCFFFFFF, 0xFF1D4ED8, () -> confirmSnip(root));
-        mSnipSaveBtn.setVisibility(View.GONE);
+        // Bottom-centered thumb-reach bar: dismiss / save instantly / save + annotate.
+        // Save + annotate appear only once a region exists; dismiss is always there.
+        LinearLayout bar = new LinearLayout(this);
+        bar.setOrientation(LinearLayout.HORIZONTAL);
+        bar.setGravity(Gravity.CENTER);
 
-        FrameLayout.LayoutParams saveLp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP | Gravity.START);
-        saveLp.setMargins(dp(14), dp(52), 0, 0);
-        root.addView(mSnipSaveBtn, saveLp);
+        mSnipCloseBtn = makeIconBtnLarge(R.drawable.ic_close, 0xFFFFFFFF, 0xFFDC2626, () -> {
+            cleanup();
+            finish();
+        });
+        bar.addView(mSnipCloseBtn);
+        bar.addView(vSpace(14));
+
+        mSnipSaveBtn = makeIconBtnLarge(R.drawable.ic_save, 0xFFFFFFFF, 0xFF1D4ED8, this::saveSnipInstantly);
+        mSnipSaveBtn.setVisibility(View.GONE);
+        bar.addView(mSnipSaveBtn);
+        bar.addView(vSpace(14));
+
+        mSnipPaintBtn = makeIconBtnLarge(R.drawable.ic_brush_md, 0xFFFFFFFF, 0xFF059669, () -> confirmSnip(root));
+        mSnipPaintBtn.setVisibility(View.GONE);
+        bar.addView(mSnipPaintBtn);
+
+        // Fixed high margin: comfortably above the tallest system nav bar
+        // (3-button, gesture, tablets). No inset math — a previous attempt to
+        // read the inset returned 0 on some devices and made overlap worse.
+        FrameLayout.LayoutParams barLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL);
+        barLp.setMargins(0, 0, 0, dp(110));
+        root.addView(bar, barLp);
+        mSnipActionBar = bar;
+
+        mSnipView.setOnSelectionChangedListener(has -> {
+            mSnipSaveBtn.setVisibility(has ? View.VISIBLE : View.GONE);
+            mSnipPaintBtn.setVisibility(has ? View.VISIBLE : View.GONE);
+        });
+    }
+
+    /**
+     * Saves the selected region straight to the gallery — no editor detour.
+     * The green brush button keeps the old save-and-annotate flow.
+     */
+    private void saveSnipInstantly() {
+        Rect sel = mSnipView != null ? mSnipView.getSelection() : null;
+        Bitmap src = CaptureActivity.pendingBitmap;
+        if (sel == null || src == null || src.isRecycled()) return;
 
         // Dismiss button — same blue style as save, always visible so a stray
         // snip can be thrown away without saving or picking a region first.
@@ -171,6 +210,13 @@ public class SnipActivity extends Activity {
         barBg.setColor(0xCC0D1117);   // 80% opaque near-black
         barBg.setCornerRadius(0);
         bar.setBackground(barBg);
+
+        // -- Dismiss (no save) --
+        bar.addView(makeIconBtn(R.drawable.ic_close, 0xFFFFFFFF, 0xFFDC2626, () -> {
+            cleanup();
+            finish();
+        }));
+        bar.addView(vSpace(6));
 
         // -- Save --
         bar.addView(makeIconBtn(R.drawable.ic_save, 0xFFFFFFFF, 0xCC1D4ED8, this::doSave));
@@ -294,6 +340,36 @@ public class SnipActivity extends Activity {
     /** View-based icon button that wraps an ImageView */
     private View makeIconBtn(int drawableRes, int tint, int bgColor, Runnable action) {
         return makeIconBtnImg(drawableRes, tint, bgColor, action);
+    }
+
+    /** Oversized (52dp) icon button for the bottom snip action bar — thumb reach.
+     *  Structurally centered: fixed-size icon CENTERed in the box, no padding
+     *  math that can drift on any density. */
+    private View makeIconBtnLarge(int drawableRes, int tint, int bgColor, Runnable action) {
+        FrameLayout box = new FrameLayout(this);
+
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(bgColor);
+        bg.setCornerRadius(dp(16));
+        box.setBackground(bg);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(dp(52), dp(52));
+        box.setLayoutParams(lp);
+
+        ImageView iv = new ImageView(this);
+        iv.setImageResource(drawableRes);
+        iv.setColorFilter(tint);
+        iv.setScaleType(ImageView.ScaleType.CENTER);
+        iv.setAdjustViewBounds(false);
+        FrameLayout.LayoutParams ivLp = new FrameLayout.LayoutParams(
+                dp(24), dp(24), Gravity.CENTER);
+        iv.setLayoutParams(ivLp);
+        box.addView(iv);
+
+        box.setClickable(true);
+        box.setFocusable(true);
+        if (action != null) box.setOnClickListener(v -> action.run());
+        return box;
     }
 
     private View vDivider() {

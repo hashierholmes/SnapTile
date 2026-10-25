@@ -3,10 +3,39 @@
     package="com.snaptile.app">
 
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
+
+    <!-- MediaProjection is back as of 1.2.0, because the app now offers both
+         capture methods and the legacy one is the whole point of having a
+         warning-free mode: it captures without any accessibility service
+         enabled, which is what bank and UPI apps object to.
+
+         It was removed for 1.1.14 as a test — "does removing the app-level
+         screen-capture declaration clear the warning?" — and that test came back
+         negative. SnapTile with no mediaProjection permission, no
+         foregroundServiceType and no capture capability was flagged exactly as
+         before, so the declaration is not what scanners read.
+
+         What the evidence now points at is the accessibility service itself
+         being present at all, with the app saying it takes screenshots: the
+         widely used ScreenshotTile app (github.com/cvzi/ScreenshotTile) is
+         flagged too, and its service declares even less than SnapTile's does —
+         one event type and a description, no capability at all. That is a
+         property of the category, not of any one manifest entry, which is why
+         1.2.0 stops looking for a setting that clears it and lets the user pick
+         a method instead. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    
+    <queries>
+        <intent>
+            <action android:name="android.accessibilityservice.AccessibilityService" />
+        </intent>
+        <package android:name="io.github.visnkmr.powermenu" />
+        <package android:name="com.olalab.lockscreen" />
+        <package android:name="at.saltyy.switchly" />
+    </queries>
 
     <application
         android:allowBackup="false"
@@ -60,6 +89,16 @@
             android:taskAffinity=""
             android:launchMode="singleTop" />
 
+        <activity
+            android:name=".AccessibilitySetupActivity"
+            android:exported="false"
+            android:label="@string/setup_title" />
+
+        <!-- Legacy capture path. Required by Android for MediaProjection, used by
+             CaptureActivity: consent first, then this service establishes the
+             foreground context before getMediaProjection() is allowed on
+             targetSdk 34. Declared again as of 1.2.0 — see the permission note
+             above. Nothing about the accessibility method depends on it. -->
         <service
             android:name=".ProjectionService"
             android:exported="false"
