@@ -104,14 +104,10 @@
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
 
-        <!-- Native capture path. Tile/chooser route through this service. Its
-             config declares no capability as of 1.2.1 (the ScreenshotTile
-             minimum), so API 30+ full-screen captures go through
-             performGlobalAction(TAKE_SCREENSHOT) and region/paint captures
-             through MediaProjection. The 1.1.15 diagnostic twin service was
-             removed in the same release: it existed only for the naming test,
-             that test came back negative, and a second accessibility entry in a
-             shipped app is a liability rather than a feature. -->
+        <!-- Clean screenshot path (PowerMenu-style). Tile/chooser route through
+             this service: API 30+ takeScreenshot() returns a Bitmap in-app,
+             API 28-29 performGlobalAction(TAKE_SCREENSHOT) uses system UI.
+             Pre-28 falls back to CaptureActivity + ProjectionService above. -->
         <service
             android:name=".ScreenshotAccessibilityService"
             android:exported="true"

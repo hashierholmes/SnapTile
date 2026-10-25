@@ -93,73 +93,6 @@
 
         </LinearLayout>
 
-        <!-- Capture method (1.2.0). The trade-off is the whole point of this
-             card, so both descriptions are spelled out on the screen rather than
-             hidden in a help page: native is prompt-free and banks warn about it,
-             legacy is noisy to use and banks leave it alone. -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:background="@drawable/card"
-            android:orientation="vertical"
-            android:padding="19dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/method_title"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <RadioButton
-                android:id="@+id/rbMethodNative"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="@string/method_native"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="34dp"
-                android:layout_marginTop="2dp"
-                android:lineSpacingExtra="3dp"
-                android:text="@string/method_native_desc"
-                android:textColor="@color/text_secondary"
-                android:textSize="13sp" />
-
-            <RadioButton
-                android:id="@+id/rbMethodLegacy"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:text="@string/method_legacy"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="34dp"
-                android:layout_marginTop="2dp"
-                android:lineSpacingExtra="3dp"
-                android:text="@string/method_legacy_desc"
-                android:textColor="@color/text_secondary"
-                android:textSize="13sp" />
-
-            <Button
-                android:id="@+id/btnMethodSetup"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="@string/method_setup_btn" />
-
-        </LinearLayout>
-
                 <LinearLayout
              android:id="@+id/accessibilityCard"
              android:layout_height="wrap_content"
@@ -179,7 +112,6 @@
                  android:textStyle="bold" />
 
             <TextView
-                 android:id="@+id/tvAccessText"
                  android:layout_height="wrap_content"
                  android:layout_width="match_parent"
                  android:textSize="14sp"
@@ -194,14 +126,6 @@
                  android:layout_width="match_parent"
                  android:layout_marginTop="12dp"
                  android:text="@string/enable_accessibility_btn" />
-
-            <Button
-                 android:id="@+id/btnBankingOff"
-                 android:layout_height="wrap_content"
-                 android:layout_width="match_parent"
-                 android:layout_marginTop="8dp"
-                 android:visibility="gone"
-                 android:text="@string/banking_mode_btn" />
 
         </LinearLayout>
 

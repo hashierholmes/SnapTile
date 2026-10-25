@@ -43,7 +43,6 @@ public class SnipActivity extends Activity {
     private SnipView    mSnipView;
     private View        mSnipActionBar;
     private View        mSnipSaveBtn;
-    private View        mSnipPaintBtn;
     private View        mSnipCloseBtn;
     private PaintCanvas mPaintCanvas;
     private Bitmap      mEditBitmap;
@@ -136,15 +135,20 @@ public class SnipActivity extends Activity {
         Bitmap src = CaptureActivity.pendingBitmap;
         if (sel == null || src == null || src.isRecycled()) return;
 
-        int l = clamp(sel.left,   0, src.getWidth()  - 1);
-        int t = clamp(sel.top,    0, src.getHeight() - 1);
-        int r = clamp(sel.right,  l + 1, src.getWidth());
-        int b = clamp(sel.bottom, t + 1, src.getHeight());
-        Bitmap cropped = Bitmap.createBitmap(src, l, t, r - l, b - t);
-        ImageSaver.save(this, cropped);
-        cropped.recycle();
-        cleanup();
-        finish();
+        // Dismiss button — same blue style as save, always visible so a stray
+        // snip can be thrown away without saving or picking a region first.
+        mSnipCloseBtn = makeIconBtn(R.drawable.ic_close, 0xCCFFFFFF, 0xFF1D4ED8, () -> {
+            cleanup();
+            finish();
+        });
+        FrameLayout.LayoutParams closeLp = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
+                Gravity.TOP | Gravity.END);
+        closeLp.setMargins(0, dp(52), dp(14), 0);
+        root.addView(mSnipCloseBtn, closeLp);
+
+        mSnipView.setOnSelectionChangedListener(has ->
+                mSnipSaveBtn.setVisibility(has ? View.VISIBLE : View.GONE));
     }
 
     /**
@@ -168,7 +172,8 @@ public class SnipActivity extends Activity {
         CaptureActivity.pendingBitmap = null;
 
         mSnipView.setVisibility(View.GONE);
-        if (mSnipActionBar != null) mSnipActionBar.setVisibility(View.GONE);
+        mSnipSaveBtn.setVisibility(View.GONE);
+        if (mSnipCloseBtn != null) mSnipCloseBtn.setVisibility(View.GONE);
         buildPaintPhase(root);
     }
 
