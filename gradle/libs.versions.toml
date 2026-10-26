@@ -1,0 +1,19 @@
+[versions]
+agp = "9.3.1"
+kotlin = "2.3.21"
+appcompat = "1.6.1"
+constraintlayout = "2.1.4"
+material = "1.9.0"
+startupRuntime = "1.1.1"
+interpolator = "1.0.0"
+
+[libraries]
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+android-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-startup-runtime = { group = "androidx.startup", name = "startup-runtime", version.ref = "startupRuntime" }
+androidx-interpolator = { group = "androidx.interpolator", name = "interpolator", version.ref = "interpolator" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
