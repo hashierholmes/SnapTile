@@ -339,7 +339,9 @@ Bug reports, suggestions, and feature requests are welcome through GitHub Issues
 
 Please include relevant details, reproduction steps, Android version information, and build logs when reporting a problem.
 
-Thank you to everyone helping make SnapTile better!
+### Acknowledgments
+
+Special thanks to [@nihal697](https://github.com/nihal697) for contributing accessibility-based screenshot capture, Quick Settings tile improvements, and snipping workflow fixes. ❤️
 
 ---
 
