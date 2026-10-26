@@ -219,13 +219,15 @@ When Accessibility is disabled, the Quick Settings tile remains available. SnapT
 
 Capture behavior may vary by Android version and the selected capture method.
 
-Quick Settings Tile
+### Quick Settings Tile
 If the SnapTile tile is not visible:
-Open Quick Settings.
-Enter the tile-editing screen.
-Find SnapTile among the available tiles.
-Add it to the active tile area.
+1. Open Quick Settings.
+2. Enter the tile-editing screen.
+3. Find SnapTile among the available tiles.
+4. Add it to the active tile area.
+
 Accessibility permissions and MediaProjection authorization are controlled by Android and must be granted by the user when required.
+
 ---
 
 ## Build

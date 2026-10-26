@@ -1,9 +1,0 @@
-[33m943cdbe[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmigration-rebased[m[33m)[m refs/heads/migration-rebased@{0}: commit: Migrate SnapTile v1.0.3 with dual capture
-[33m943cdbe[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmigration-rebased[m[33m)[m HEAD@{0}: commit: Migrate SnapTile v1.0.3 with dual capture
-[33m3e21e3e[m[33m ([m[1;31morigin/migration-v1.0.3[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m refs/heads/migration-rebased@{1}: branch: Created from origin/migration-v1.0.3
-[33m3e21e3e[m[33m ([m[1;31morigin/migration-v1.0.3[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{1}: checkout: moving from migration-v1.0.3 to migration-rebased
-[33m3e21e3e[m[33m ([m[1;31morigin/migration-v1.0.3[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m refs/remotes/origin/HEAD@{0}: fetch
-[33m3e21e3e[m[33m ([m[1;31morigin/migration-v1.0.3[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m refs/remotes/origin/main@{0}: fetch origin: storing head
-[33m3e21e3e[m[33m ([m[1;31morigin/migration-v1.0.3[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m refs/remotes/origin/migration-v1.0.3@{0}: fetch origin: storing head
-[33me206713[m[33m ([m[1;32mmigration-v1.0.3[m[33m)[m refs/heads/migration-v1.0.3@{0}: commit (initial): Migrate SnapTile to v1.0.3
-[33me206713[m[33m ([m[1;32mmigration-v1.0.3[m[33m)[m HEAD@{2}: commit (initial): Migrate SnapTile to v1.0.3
