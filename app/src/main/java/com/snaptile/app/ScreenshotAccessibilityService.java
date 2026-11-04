@@ -19,10 +19,14 @@ import androidx.annotation.RequiresApi;
  * foreground service + VirtualDisplay), this service uses the platform
  * accessibility screenshot APIs:
  *
- *  - API 30+ : takeScreenshot(displayId, executor, callback) returns a Bitmap
- *              directly to the app. All 3 SnapTile modes keep working.
+ *  - API 30+ : full screen uses performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT)
+ *              so the system takes and saves the shot and shows its native UI.
+ *              Region / full+paint use takeScreenshot() to get the bitmap in-app
+ *              for cropping and drawing.
  *  - API 28-29 : performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT) triggers
- *              the system screenshot UI. System owns save/share.
+ *              the system screenshot UI. System owns save/share, so only
+ *              full-screen mode can use it; region / paint fall back to
+ *              CaptureActivity (MediaProjection) via requestScreenshot() == false.
  *  - API <28 : no accessibility screenshot API — falls back to CaptureActivity
  *              (MediaProjection).
  *
@@ -34,10 +38,19 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
     private static ScreenshotAccessibilityService sInstance;
     private static String sPendingMode = ScreenshotChooserActivity.MODE_FULL;
 
-    /** Called from Tile / Chooser. Returns false when the service is not enabled. */
+    /**
+     * Called from Tile / Chooser. Returns false when the service is not enabled,
+     * or when the requested mode cannot be served on this API level (region /
+     * paint on API < 30 need a bitmap that only takeScreenshot() provides, so
+     * the caller falls back to CaptureActivity / MediaProjection).
+     */
     public static boolean requestScreenshot(String mode) {
         if (sInstance == null) return false;
         if (mode != null) sPendingMode = mode;
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R
+                && !ScreenshotChooserActivity.MODE_FULL.equals(sPendingMode)) {
+            return false;
+        }
         sInstance.handleRequest();
         return true;
     }
@@ -69,17 +82,35 @@ public class ScreenshotAccessibilityService extends AccessibilityService {
 
     private void handleRequest() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            takeScreenshotCompat();
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            boolean ok = performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT);
-            if (!ok) {
-                toast("Screenshot failed");
+            if (ScreenshotChooserActivity.MODE_FULL.equals(sPendingMode)) {
+                // Full screen: let the system take and save it so its native
+                // screenshot UI (thumbnail pop / edit-share sheet) shows.
+                systemScreenshot();
+            } else {
+                // Region / full+paint: we need the bitmap in-app for crop/draw.
+                takeScreenshotCompat();
             }
-            // NOTE: on API 28-29 the system owns save/share UI.
-            // Region / Paint modes cannot receive a bitmap here —
-            // they fall back to MediaProjection (see pick() fallback).
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            // Only full screen reaches here (region / paint return false above
+            // so the chooser falls back to MediaProjection). The system owns
+            // save/share UI on 28-29.
+            systemScreenshot();
         } else {
             startLegacyCapture();
+        }
+    }
+
+    /**
+     * System-owned screenshot via performGlobalAction.
+     *
+     * Needs no screenshot capability, so it works on API 28+ regardless of the
+     * declared config. The system saves the image and shows its own UI; no
+     * in-app toast on success because the system UI is already visible.
+     */
+    private void systemScreenshot() {
+        boolean ok = performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT);
+        if (!ok) {
+            toast("Screenshot failed");
         }
     }
 
