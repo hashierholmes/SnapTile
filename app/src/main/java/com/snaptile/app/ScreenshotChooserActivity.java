@@ -20,7 +20,9 @@ import android.widget.TextView;
  * into one of the mode constants consumed by the screenshot flow.
  *
  * Preferred path is ScreenshotAccessibilityService (no MediaProjection consent).
- * CaptureActivity (MediaProjection) is kept only as a pre-API-28 fallback.
+ * CaptureActivity (MediaProjection) is the fallback when the service is off,
+ * on pre-API-28, and for region / paint on API 28-29 (the system screenshot
+ * action cannot return a bitmap for crop/draw).
  */
 public class ScreenshotChooserActivity extends Activity {
 
@@ -110,7 +112,8 @@ public class ScreenshotChooserActivity extends Activity {
         new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
             // Clean path first: accessibility service (no screen-record prompt).
             if (ScreenshotAccessibilityService.requestScreenshot(mode)) return;
-            // Fallback: service not enabled / pre-API-28 -> legacy MediaProjection.
+            // Fallback: service not enabled, pre-API-28, or region/paint on
+            // API 28-29 -> legacy MediaProjection.
             Intent i = new Intent(this, CaptureActivity.class);
             i.putExtra(EXTRA_MODE, mode);
             i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
